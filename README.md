@@ -40,3 +40,6 @@ SERIALIZING:
 Press `s` to serialize your new config back into the version-controlled
 config file. Note that this actually reads your config again cause idk
 if the serializer should know abt the state of the program
+
+## Camera Controls
+Camera controls are not the best but they get the job done. When the application first loads make sure to left-click on the screen, otherwise the camera will rotate in a random angle and it is very difficult to re-orientate yourself. Left mouse hold + drag will pan the camera around and arrow keys will move the camera
