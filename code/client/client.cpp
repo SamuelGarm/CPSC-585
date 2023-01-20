@@ -215,23 +215,6 @@ int main(int argc, char* argv[]) {
 		ImGui::End();
 		// END FRAMERATE COUNTER
 
-		// TODO(milestone 1): strip all non-milestone related imgui windows out
-		// BEGIN CAR PHYSICS PANEL
-		ImGui::Begin("Car Physics", nullptr);
-		ImGui::SliderFloat("acceleration", &carPhysics.m_acceleration, 0.f, 1000.f);
-		ImGui::SliderFloat("suspension", &carPhysics.m_suspension_force, 0.f, 1000.f);
-		if (ImGui::Button("Serialize")) carConfig.serialize();
-		ImGui::End();
-		// END CAR PHYSICS PANEL
-
-		// BEGIN ECS DEMO PANEL
-		ImGui::Begin("ECS Demo");
-		ImGui::Text("%s", exampleEcsSystem.getDisplayString().c_str());
-		ImGui::End();
-
-		// NOTE: the imgui bible - beau
-		ImGui::ShowDemoWindow();
-
 		ImGui::Render();
 		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
