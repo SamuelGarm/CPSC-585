@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
 			float frame_time_seconds = framerate.m_time_queue.front() / 1000.0f;
 			gScene->simulate(frame_time_seconds);
 			bool fetch = gScene->fetchResults(true);
-			ImGui::Checkbox("Return value of PxScene::fetchResults()", &fetch);
+			ImGui::Text("Return value of PxScene::fetchResults(): %d", fetch);
 		}
 		ImGui::End();
 		// END FRAMERATE COUNTER
