@@ -210,14 +210,11 @@ int main(int argc, char* argv[]) {
 		ImGui::NewFrame();
 
 		// BEGIN FRAMERATE COUNTER
-		ImGui::SetNextWindowSize(ImVec2(500, 100)); 
+		ImGui::SetNextWindowSize(ImVec2(500, 125));
 		ImGui::Begin("Milestone 1");
 		ImGui::Text("framerate: %d", framerate.framerate());
         ImGui::PlotLines("Frametime plot (ms)", framerate.m_time_queue.data(), framerate.m_time_queue.size());
         ImGui::PlotLines("Framerate plot (hz)", framerate.m_rate_queue.data(), framerate.m_rate_queue.size());
-		// TODO(milestone 1): display physx value as proof that physx is initialized
-		ImGui::End();
-		// END FRAMERATE COUNTER
 
 		// simulate physics with time delta = time of last frame
 		// XXX(beau): DOES NOT CLAMP TIME DELTA
@@ -225,8 +222,12 @@ int main(int argc, char* argv[]) {
 		{
 			float frame_time_seconds = framerate.m_time_queue.front() / 1000.0f;
 			gScene->simulate(frame_time_seconds);
-			gScene->fetchResults(true);
+			bool fetch = gScene->fetchResults(true);
+			ImGui::Checkbox("Return value of PxScene::fetchResults()", &fetch);
 		}
+		ImGui::End();
+		// END FRAMERATE COUNTER
+
 
 		ImGui::Render();
 		glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
