@@ -1,5 +1,6 @@
 #include "ImGuiDebug.h"
 #include <iostream>
+#include "Car.h"
 
 // Initializes variables
 void baseVariablesInit() {
