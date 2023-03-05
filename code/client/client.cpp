@@ -57,9 +57,46 @@ void finishLinePrint() {
 }
 
 
+
+#include "fmod.hpp"
+#include "fmod_errors.h"
+
+FMOD_RESULT result;
+
+struct SoundSystem {
+	FMOD::System* system = NULL;
+	FMOD::Sound* beepsound = NULL;
+} soundsystem;
+
+void handle_fmod_error() {
+	if (result != FMOD_OK)
+	{
+		printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+}
+
+void init_sounds() {
+
+	result = FMOD::System_Create(&soundsystem.system);      // Create the main system object.
+	handle_fmod_error();
+
+	result = soundsystem.system->init(512, FMOD_INIT_NORMAL, 0);    // Initialize FMOD.
+	handle_fmod_error();
+
+	result = soundsystem.system->createSound("audio/beep.ogg", FMOD_DEFAULT, 0, &soundsystem.beepsound);
+	handle_fmod_error();
+}
+
 int main(int argc, char* argv[]) {
 	//RUN_GRAPHICS_TEST_BENCH();
 	printf("Starting main");
+
+
+
+
+
+	init_sounds();
 
 
 
@@ -353,6 +390,11 @@ int main(int argc, char* argv[]) {
 					case SDLK_m:
 						testCar.TetherSteer();
 						break;
+					case SDLK_5:
+						puts("pressed the sound key");
+						result = soundsystem.system->playSound(soundsystem.beepsound, 0, false, 0);
+						handle_fmod_error();
+						break;
 
 					// Prinout of camera matrix
 				case SDLK_c:
@@ -379,6 +421,9 @@ int main(int argc, char* argv[]) {
 			//pass the event to the camera
 			gs.input(window.event, controlledCamera);
 		}
+
+		result = soundsystem.system->update();
+		handle_fmod_error();
 
 		// Finish line code
 		if (car_trans.getTranslation().x >= -1.5f && car_trans.getTranslation().x <= 4.8f &&
