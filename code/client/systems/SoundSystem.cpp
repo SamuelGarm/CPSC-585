@@ -48,13 +48,11 @@ void init_sound_system() {
 	result = soundsystem.system->createSound("audio/beep.ogg", FMOD_3D, 0, &soundsystem.beepsound);
 	handle_fmod_error();
 
-	// TODO: engine sound
-	//result = soundsystem.system->createSound("audio/beep.ogg", FMOD_3D, 0, &soundsystem.beepsound);
-	//handle_fmod_error();
+	result = soundsystem.system->createSound("audio/brake-6315.mp3", FMOD_3D, 0, &soundsystem.brakesound);
+	handle_fmod_error();
 
-	// TODO: brake sound
-	//result = soundsystem.system->createSound("audio/beep.ogg", FMOD_3D, 0, &soundsystem.beepsound);
-	//handle_fmod_error();
+	result = soundsystem.system->createSound("audio/bus-engine-idling-26992.mp3", FMOD_3D, 0, &soundsystem.enginesound);
+	handle_fmod_error();
 
 	// TODO: collision sound
 	//result = soundsystem.system->createSound("audio/beep.ogg", FMOD_3D, 0, &soundsystem.beepsound);
@@ -89,7 +87,7 @@ void update_sounds(Car& player, AICar& opponent) {
 	soundsystem.playerenginechannel->isPlaying(&isPlaying);
 	if (!isPlaying && is_car_throttling(player)) {
 
-		result = soundsystem.system->playSound(soundsystem.beepsound, 0, false, &soundsystem.playerenginechannel);
+		result = soundsystem.system->playSound(soundsystem.enginesound, 0, false, &soundsystem.playerenginechannel);
 		handle_fmod_error();
 
 		// also turn off brake sound
@@ -101,7 +99,7 @@ void update_sounds(Car& player, AICar& opponent) {
 	soundsystem.playerbrakechannel->isPlaying(&isPlaying);
 	if (!isPlaying && is_car_braking(player)) {
 
-		result = soundsystem.system->playSound(soundsystem.beepsound, 0, false, &soundsystem.playerbrakechannel);
+		result = soundsystem.system->playSound(soundsystem.brakesound, 0, false, &soundsystem.playerbrakechannel);
 		handle_fmod_error();
 
 		// also turn off the engine sound
@@ -113,7 +111,7 @@ void update_sounds(Car& player, AICar& opponent) {
 	soundsystem.opponentenginechannel->isPlaying(&isPlaying);
 	if (!isPlaying && is_car_throttling(opponent)) {
 
-		result = soundsystem.system->playSound(soundsystem.beepsound, 0, false, &soundsystem.opponentenginechannel);
+		result = soundsystem.system->playSound(soundsystem.enginesound, 0, false, &soundsystem.opponentenginechannel);
 		handle_fmod_error();
 
 		// also turn off brake sound
@@ -125,7 +123,7 @@ void update_sounds(Car& player, AICar& opponent) {
 	soundsystem.playerbrakechannel->isPlaying(&isPlaying);
 	if (!isPlaying && is_car_braking(opponent)) {
 
-		result = soundsystem.system->playSound(soundsystem.beepsound, 0, false, &soundsystem.opponentbrakechannel);
+		result = soundsystem.system->playSound(soundsystem.brakesound, 0, false, &soundsystem.opponentbrakechannel);
 		handle_fmod_error();
 
 		// also turn off the engine sound
