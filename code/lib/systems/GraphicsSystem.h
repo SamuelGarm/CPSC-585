@@ -38,7 +38,7 @@ private:
 	//uniforms
 	int numCamerasActive = 1;
 
-	int cam_mode = 1; // Used to determine what mode the camera should use (free, fixed, follow)
+	int cam_mode = 3; // Used to determine what mode the camera should use (free, fixed, follow)
 	glm::mat4 V = glm::mat4(1.f); // Had to declare this variable here for the rest of the program to work
 
 	//debug panel variables

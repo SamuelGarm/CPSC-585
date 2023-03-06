@@ -50,7 +50,7 @@ glm::vec3 calculateSpherePoint(float s, float t)
 CarPhysics carPhysics;
 CarPhysicsSerde carConfig(carPhysics);
 
-bool showImgui = true;
+bool showImgui = false;
 
 int lapCount = 0;
 bool isFinished = false;
@@ -192,13 +192,13 @@ int main(int argc, char* argv[]) {
 	mainScene.AddComponent(car_e.guid, car_t);
 	
 	// Center of gravity sphere - used for debug
-	RenderModel sphere_r = RenderModel();
-	GraphicsSystem::importOBJ(sphere_r, "sphere.obj");
-	sphere_r.setModelColor(glm::vec3(0.5f, 0.0f, 0.5f));
-	mainScene.AddComponent(sphere_e.guid, sphere_r);
-	TransformComponent sphere_t = TransformComponent(testCar.getVehicleRigidBody());
-	sphere_t.setScale(glm::vec3(0.5f, 0.5f, 0.5f));
-	mainScene.AddComponent(sphere_e.guid, sphere_t);
+	//RenderModel sphere_r = RenderModel();
+	//GraphicsSystem::importOBJ(sphere_r, "sphere.obj");
+	//sphere_r.setModelColor(glm::vec3(0.5f, 0.0f, 0.5f));
+	//mainScene.AddComponent(sphere_e.guid, sphere_r);
+	//TransformComponent sphere_t = TransformComponent(testCar.getVehicleRigidBody());
+	//sphere_t.setScale(glm::vec3(0.5f, 0.5f, 0.5f));
+	//mainScene.AddComponent(sphere_e.guid, sphere_t);
 
 	
 	// Finish line components
@@ -252,7 +252,7 @@ int main(int argc, char* argv[]) {
 	//Level
 	RenderModel level_r = RenderModel();
 	//GraphicsSystem::importOBJ(level_r, "Stadium.obj");
-	GraphicsSystem::importOBJ(level_r, "Stadium_MINIMAL.obj"); //for faster loading times
+	GraphicsSystem::importOBJ(level_r, "Stadium_MAXIMAL.obj"); //for faster loading times
 	mainScene.AddComponent(level_e.guid, level_r);
 	mainScene.AddComponent(level_e.guid, level_t);
 
