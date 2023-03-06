@@ -44,13 +44,11 @@ FMOD_VECTOR px_to_fmod_vec3(PxVec3 v) {
 	};
 }
 
-void update_sounds(Car& player) {
+void update_sounds(Car& player, Car& opponent) {
 	auto playerbody = player.getVehicleRigidBody();
 	auto playerpose = playerbody->getGlobalPose();
 	auto playerveloc = px_to_fmod_vec3(playerbody->getLinearVelocity());
 	auto playerposition = px_to_fmod_vec3(playerpose.p);
-
-	PxMat33 playerrotation(playerpose.q);
 
 	{
 		bool isPlaying = false;
@@ -59,14 +57,19 @@ void update_sounds(Car& player) {
 		if (isPlaying)
 			soundsystem.playerchannel->set3DAttributes(&playerposition, &playerveloc);
 
-		// TODO: ai position
-		//isPlaying = false;
-		//soundsystem.opponentchannel->isPlaying(&isPlaying);
-		//if (isPlaying)
-			//soundsystem.opponentchannel->get3DAttributes(&)
+		isPlaying = false;
+		soundsystem.opponentchannel->isPlaying(&isPlaying);
+		if (isPlaying) {
+			auto opponentbody = opponent.getVehicleRigidBody();
+			auto opponentpose = opponentbody->getGlobalPose();
+			auto opponentveloc = px_to_fmod_vec3(opponentbody->getLinearVelocity());
+			auto opponentposition = px_to_fmod_vec3(opponentpose.p);
+			soundsystem.opponentchannel->set3DAttributes(&opponentposition, &opponentveloc);
+		}
 	}
 
 	// set player listener position
+	PxMat33 playerrotation(playerpose.q);
 	auto forward = px_to_fmod_vec3(playerrotation * PxVec3{ 0, 0, 1 });
 	auto up = px_to_fmod_vec3(playerrotation * PxVec3{ 0, 1, 0 });
 	result = soundsystem.system->set3DListenerAttributes(0, &playerposition, &playerveloc, &forward, &up);
