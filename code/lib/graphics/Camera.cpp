@@ -3,11 +3,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
-Camera::Camera() {}
-
-// takes in a point and calculates the angles for the camera to look at that point from its position
-void Camera::lookat(glm::vec3 _target) {
-
+Camera::Camera() {
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(panHorizontal)) * cos(glm::radians(panVertical));
+	direction.y = sin(glm::radians(panVertical));
+	direction.z = sin(glm::radians(panHorizontal)) * cos(glm::radians(panVertical));
+	cameraDirection = glm::normalize(direction);
 }
 
 glm::mat4 Camera::getView()
@@ -94,5 +95,6 @@ glm::vec3 Camera::getPos()
 
 void Camera::setPos(glm::vec3 _position)
 {
+	velocity = _position - cameraPos;
 	cameraPos = _position;
 }
