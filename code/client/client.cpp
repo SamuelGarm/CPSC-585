@@ -386,7 +386,7 @@ int main(int argc, char* argv[]) {
 			gs.input(window.event, controlledCamera);
 		}
 
-		update_sounds(testCar);
+		update_sounds(testCar, aiCar);
 
 
 		// Finish line code

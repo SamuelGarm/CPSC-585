@@ -2,8 +2,11 @@
 
 #include "fmod.hpp"
 #include "fmod_errors.h"
+
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtx/quaternion.hpp"
+
+#include "../Input.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -44,18 +47,28 @@ FMOD_VECTOR px_to_fmod_vec3(PxVec3 v) {
 	};
 }
 
-void update_sounds(Car& player, Car& opponent) {
+void update_sounds(Car& player, AICar& opponent) {
+	const float ENGINE_SOUND_MIN_SPEED = 1.f;
+
 	auto playerbody = player.getVehicleRigidBody();
 	auto playerpose = playerbody->getGlobalPose();
-	auto playerveloc = px_to_fmod_vec3(playerbody->getLinearVelocity());
+	auto playerveloc = playerbody->getLinearVelocity();
 	auto playerposition = px_to_fmod_vec3(playerpose.p);
 
 	{
+		auto keys_arr = SDL_GetKeyboardState(nullptr);
+		auto w_key = keys_arr[SDL_SCANCODE_W];
+
 		bool isPlaying = false;
-		// XXX(beau): atm I'm ignoring the result, maybe that's a bad idea
+
+		soundsystem.playerchannel->isPlaying(&isPlaying);
+		if (!isPlaying && (SDL_GameControllerGetButton(ControllerInput::controller, SDL_CONTROLLER_BUTTON_A) || w_key)) {
+			result = soundsystem.system->playSound(soundsystem.beepsound, 0, false, &soundsystem.playerchannel);
+			handle_fmod_error();
+		}
 		soundsystem.playerchannel->isPlaying(&isPlaying);
 		if (isPlaying)
-			soundsystem.playerchannel->set3DAttributes(&playerposition, &playerveloc);
+			soundsystem.playerchannel->set3DAttributes(&playerposition, &px_to_fmod_vec3(playerveloc));
 
 		isPlaying = false;
 		soundsystem.opponentchannel->isPlaying(&isPlaying);
@@ -72,7 +85,7 @@ void update_sounds(Car& player, Car& opponent) {
 	PxMat33 playerrotation(playerpose.q);
 	auto forward = px_to_fmod_vec3(playerrotation * PxVec3{ 0, 0, 1 });
 	auto up = px_to_fmod_vec3(playerrotation * PxVec3{ 0, 1, 0 });
-	result = soundsystem.system->set3DListenerAttributes(0, &playerposition, &playerveloc, &forward, &up);
+	result = soundsystem.system->set3DListenerAttributes(0, &playerposition, &px_to_fmod_vec3(playerveloc), &forward, &up);
 	handle_fmod_error();
 
 	result = soundsystem.system->update();
