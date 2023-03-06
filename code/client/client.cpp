@@ -32,6 +32,8 @@
 
 #include "physics/LevelCollider.h"
 
+#include "systems/SoundSystem.h"
+
 glm::vec3 calculateSpherePoint(float s, float t)
 {
 	float z = cos(2 * M_PI * t) * sin(M_PI * s);
@@ -57,48 +59,12 @@ void finishLinePrint() {
 }
 
 
-
-#include "fmod.hpp"
-#include "fmod_errors.h"
-
-FMOD_RESULT result;
-
-struct SoundSystem {
-	FMOD::System* system = NULL;
-	FMOD::Sound* beepsound = NULL;
-} soundsystem;
-
-void handle_fmod_error() {
-	if (result != FMOD_OK)
-	{
-		printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
-		exit(-1);
-	}
-}
-
-void init_sounds() {
-
-	result = FMOD::System_Create(&soundsystem.system);      // Create the main system object.
-	handle_fmod_error();
-
-	result = soundsystem.system->init(512, FMOD_INIT_NORMAL, 0);    // Initialize FMOD.
-	handle_fmod_error();
-
-	result = soundsystem.system->createSound("audio/beep.ogg", FMOD_DEFAULT, 0, &soundsystem.beepsound);
-	handle_fmod_error();
-}
-
 int main(int argc, char* argv[]) {
 	//RUN_GRAPHICS_TEST_BENCH();
 	printf("Starting main");
 
 
-
-
-
-	init_sounds();
-
-
+	init_sound_system();
 
 
 	SDL_Init(SDL_INIT_EVERYTHING); // initialize all sdl systems
@@ -391,9 +357,7 @@ int main(int argc, char* argv[]) {
 						testCar.TetherSteer();
 						break;
 					case SDLK_5:
-						puts("pressed the sound key");
-						result = soundsystem.system->playSound(soundsystem.beepsound, 0, false, 0);
-						handle_fmod_error();
+						play_beep_sound();
 						break;
 
 					// Prinout of camera matrix
@@ -422,8 +386,8 @@ int main(int argc, char* argv[]) {
 			gs.input(window.event, controlledCamera);
 		}
 
-		result = soundsystem.system->update();
-		handle_fmod_error();
+		update_sounds(testCar);
+
 
 		// Finish line code
 		if (car_trans.getTranslation().x >= -1.5f && car_trans.getTranslation().x <= 4.8f &&
