@@ -239,11 +239,12 @@ void addRigidBody(physics::PhysicsSystem physicsSystem) {
 
 
 	// Tether Point
+	//TODO : Make them cylinders ?
 	PxBoxGeometry boxGeom15(PxVec3(1.0f, 2.0f, 1.0f));
 
 	// create a rigid body with the box geometry
 	PxTransform transform15(PxVec3(0.0f, 1.0f, 162.0f));
-	PxRigidStatic* actor15 = PxCreateStatic(
+	PxRigidStatic* endTetherNorth = PxCreateStatic(
 		*physicsSystem.m_Physics,
 		transform15,
 		boxGeom15,
@@ -251,7 +252,7 @@ void addRigidBody(physics::PhysicsSystem physicsSystem) {
 	);
 
 	// add the actor to the scene
-	physicsSystem.m_Scene->addActor(*actor15);
+	physicsSystem.m_Scene->addActor(*endTetherNorth);
 
 
 	// Tether Point
@@ -259,7 +260,7 @@ void addRigidBody(physics::PhysicsSystem physicsSystem) {
 
 	// create a rigid body with the box geometry
 	PxTransform transform16(PxVec3(0.0f, 1.0f, -162.0f));
-	PxRigidStatic* actor16 = PxCreateStatic(
+	PxRigidStatic* endTetherSouth = PxCreateStatic(
 		*physicsSystem.m_Physics,
 		transform16,
 		boxGeom16,
@@ -267,8 +268,16 @@ void addRigidBody(physics::PhysicsSystem physicsSystem) {
 	);
 
 	// add the actor to the scene
-	physicsSystem.m_Scene->addActor(*actor16);
+	physicsSystem.m_Scene->addActor(*endTetherSouth);
 
+	// Pushing back a collection of tether points
+	// this is used in the tether points system
+	// TetherJoints.cpp
+	std::vector<PxRigidStatic*> tetherPoints;
+	tetherPoints.push_back(endTetherSouth);
+	tetherPoints.push_back(endTetherNorth);
+
+	setTetherPoints(tetherPoints);
 
 	// If you want to add an object and rotate it - this is how you do it
 	// You need to pass both the rotation and positon to PxTransform at the same time

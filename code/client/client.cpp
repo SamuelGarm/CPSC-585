@@ -38,6 +38,9 @@
 
 #include "systems/SoundSystem.h"
 
+#include "systems/TetherJoint.h"
+
+
 glm::vec3 calculateSpherePoint(float s, float t)
 {
 	float z = cos(2 * M_PI * t) * sin(M_PI * s);
@@ -56,13 +59,14 @@ bool isFinished = false;
 
 uint32_t lastTime_millisecs;
 
-void finishLinePrint() {
-	lapCount++;
-	std::cout << "Lap: " << lapCount << std::endl;
-	if (lapCount == 2) {
-		std::cout << "You win !" << std::endl;
-	}
-}
+// TODO: Remove, GUI already does this
+//void finishLinePrint() {
+//	lapCount++;
+//	std::cout << "Lap: " << lapCount << std::endl;
+//	if (lapCount == 2) {
+//		std::cout << "You win !" << std::endl;
+//	}
+//}
 
 // Provides a target (ideally the center of mass of a moving object)
 // Renders the sphere where the transform for that object is
@@ -328,8 +332,13 @@ int main(int argc, char* argv[]) {
 	baseVariablesInit(testCar.m_Vehicle);
 	engineVariablesInit(testCar.m_Vehicle);
 
-
 	bool playSounds = true;
+
+	// Testing joint setup for tether
+	//setupJoint(physicsSystem, testCar);
+	//testJoint(physicsSystem, testCar);
+	//testRope(physicsSystem, testCar);
+	testFree(physicsSystem);
 
 	// Find the default values of movement dampening
 	// This will be used to reset changes to dampening
@@ -509,7 +518,7 @@ int main(int argc, char* argv[]) {
 		{
 			if (isFinished == false) {
 				isFinished = true;
-				finishLinePrint();
+				//finishLinePrint();
 			}
 
 		}

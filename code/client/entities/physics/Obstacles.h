@@ -5,6 +5,8 @@
 #include "../../systems/PhysicsSystem.h"
 #include "PxPhysicsAPI.h"
 
+#include "../../systems/TetherJoint.h"
+
 using namespace physx;
 
 void setUpLogs(ecs::Scene& mainScene);
