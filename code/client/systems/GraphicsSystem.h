@@ -18,6 +18,10 @@
 
 struct GraphicsSystem : ecs::ISystem {
 public:
+	GraphicsSystem(const GraphicsSystem&) = delete;
+	GraphicsSystem(GraphicsSystem&&) = delete;
+	GraphicsSystem& operator=(const GraphicsSystem&) = delete;
+	GraphicsSystem& operator=(GraphicsSystem&&) = delete;
 	GraphicsSystem();
 	~GraphicsSystem();
 	void ImGuiPanel();

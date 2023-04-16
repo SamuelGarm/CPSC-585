@@ -2,6 +2,7 @@
 #include "graphics/Geometry.h"
 #include "graphics/Texture.h"
 #include "PxPhysicsAPI.h"
+#include <memory>
 
 #include "../utils/PxConversionUtils.h"
 #include <glm/gtc/random.hpp>
@@ -94,12 +95,25 @@ private:
 
 };
 
+/*
+* A mesh can not be copied die to the fact that memory is on the GPU and there is no way I know of to copy it.
+* Therefore it can ONLY be moved
+*/
 struct Mesh {
+	//constructor
+	Mesh() { geometry = new GPU_Geometry; }
+	//disable copying
+	Mesh(const Mesh&) = delete;
+	Mesh& operator=(const Mesh&) = delete;
+	//moving
+	Mesh(Mesh&& other) noexcept = default;
+	Mesh& operator=(Mesh&& other) noexcept = default;
+	//member values
 	friend class GraphicsSystem;
 	unsigned int numberOfVerticies = 0;
 	int numberOfIndicies = 0;
 	unsigned int ID = -1;
-	GPU_Geometry* geometry = new GPU_Geometry;
+	GPU_Geometry* geometry = nullptr;
 	int textureIndex = -1;
 	glm::vec3 meshColor = glm::vec3(1);
 	std::string name = "";
@@ -115,16 +129,16 @@ struct Mesh {
 
 /*
 * Render component is what is visible to the user
-*/
+*/ 
 struct RenderModel {
 public:
 	//constructors
 	RenderModel() = default;
 	//accessors
 	int g_numberOfVerts() {return numberOfVerts;};
-	int g_numberOfVerts(int _meshID) { int i = getMeshIndex(_meshID); if (i != -1) { return meshes[i].numberOfVerticies; } else { return -1; } }
-	bool g_hasNormals(int _meshID) { int i = getMeshIndex(_meshID); if (i != -1) { return (meshes[i].properties & 2) != 0; } else { return false; } }
-	bool g_hasTextureCoords(int _meshID) { int i = getMeshIndex(_meshID); if (i != -1) { return (meshes[i].properties & 1) != 0; } else { return false; } }
+	int g_numberOfVerts(int _meshID) { int i = getMeshIndex(_meshID); if (i != -1) { return (*meshes.get())[i].numberOfVerticies; } else { return -1; } }
+	bool g_hasNormals(int _meshID) { int i = getMeshIndex(_meshID); if (i != -1) { return ((*meshes.get())[i].properties & 2) != 0; } else { return false; } }
+	bool g_hasTextureCoords(int _meshID) { int i = getMeshIndex(_meshID); if (i != -1) { return ((*meshes.get())[i].properties & 1) != 0; } else { return false; } }
 	std::string g_name() { return std::string(name); }
 	int g_meshIDbyName(std::string _name);
 	//modifiers
@@ -148,8 +162,8 @@ public:
 //private functions
 private:
 	int getMeshIndex(int _meshID) {
-		for (int i = 0; i < meshes.size(); i++) {
-			if (meshes[i].ID == _meshID)
+		for (int i = 0; i < meshes.get()->size(); i++) {
+			if ((*meshes.get())[i].ID == _meshID)
 				return i;
 		}
 		return -1;
@@ -159,11 +173,12 @@ private:
 private:
 	friend class GraphicsSystem;
 	//a single render component can have multiple meshes and corresponding textures attached
-	std::vector<Mesh> meshes;	
-	std::vector<Texture*> textures;	
+	std::shared_ptr<std::vector<Mesh>> meshes = std::make_shared<std::vector<Mesh>>();;
+	std::shared_ptr<std::vector<Texture*>> textures = std::make_shared<std::vector<Texture*>>();;
 	std::string name = "Dave";
 //private fields
 private:
+	//a local variable to assign IDs to the meshes since they may be moved around in the vector and indicies aren't reliable
 	unsigned int currentMeshID = 0;
 	int numberOfVerts = 0;
 	

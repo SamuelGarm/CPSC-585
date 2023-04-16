@@ -39,7 +39,7 @@ public:
 	void setVerts(const std::vector<glm::vec3>& verts);
 	void setTexCoords(const std::vector<glm::vec2>& texCoords);
 	void setNorms(const std::vector<glm::vec3>& norms);
-	void setIndexBuff(const std::vector<GLuint>);
+	void setIndexBuff(const std::vector<GLuint>&);
 
 private:
 	// note: due to how OpenGL works, vao needs to be 

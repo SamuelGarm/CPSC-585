@@ -633,7 +633,7 @@ void GraphicsSystem::Update(ecs::Scene& scene, float deltaTime) {
 		glm::mat4 M = glm::translate(glm::mat4(1), trans.getTranslation()) * toMat4(trans.getRotation()) * glm::scale(glm::mat4(1), trans.getScale());
 
 		//loop through each mesh in the renderComponent
-		for each (Mesh mesh in comp.meshes) {
+		for (Mesh& mesh : *(comp.meshes.get())) {
 			mesh.geometry->bind();
 			glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(M * mesh.localTransformation));
 			glViewport(0, 0, 4096, 4096);
@@ -707,7 +707,7 @@ void GraphicsSystem::Update(ecs::Scene& scene, float deltaTime) {
 		glBindTexture(GL_TEXTURE_2D, gLightDepth);
 
 		//loop through each mesh in the renderComponent
-		for each (Mesh mesh in comp.meshes) {
+		for (Mesh& mesh : *comp.meshes.get()) {
 
 			glUniformMatrix4fv(modelUniform, 1, GL_FALSE, glm::value_ptr(M * mesh.localTransformation));
 			glm::mat3 normalsMatrix = glm::mat3(glm::transpose(glm::inverse(M * mesh.localTransformation)));
@@ -716,7 +716,7 @@ void GraphicsSystem::Update(ecs::Scene& scene, float deltaTime) {
 			mesh.geometry->bind();
 			if ((mesh.properties & Mesh::meshProperties::m_hasTextureCoords) != 0 && mesh.textureIndex != -1) {
 				glActiveTexture(GL_TEXTURE1);
-				comp.textures[mesh.textureIndex]->bind();
+				(*comp.textures.get())[mesh.textureIndex]->bind();
 				glUniform1ui(shaderStateUniform, 1);
 			}
 			else {
@@ -1009,7 +1009,7 @@ void GraphicsSystem::processNode(aiNode* node, const aiScene* scene, RenderModel
 		}
 		
 		int ID = _component.attachMesh(geometry);
-		_component.meshes[_component.getMeshIndex(ID)].name = mesh->mName.C_Str();
+		(*_component.meshes.get())[_component.getMeshIndex(ID)].name = mesh->mName.C_Str();
 		// process material
 
 
@@ -1019,7 +1019,7 @@ void GraphicsSystem::processNode(aiNode* node, const aiScene* scene, RenderModel
 			aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 			aiColor3D color(0.f, 0.f, 0.f);
 			material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-			_component.meshes[_component.getMeshIndex(ID)].meshColor = glm::vec3(color.r, color.g, color.b);
+			(*_component.meshes.get())[_component.getMeshIndex(ID)].meshColor = glm::vec3(color.r, color.g, color.b);
 
 			if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 				//get the textures name(?)

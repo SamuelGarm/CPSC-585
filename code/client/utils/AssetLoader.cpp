@@ -25,7 +25,10 @@ void AssetLoader::loadAsset(Asset asset)
   }
 }
 
-
+/*
+* this thread spins off other threads for each asset to load them
+* when it is finished it cleans up and returns
+*/
 void AssetLoader::loadAssets()
 {
 
@@ -47,7 +50,9 @@ void AssetLoader::loadAssets()
 
 }
 
-
+/*
+* When it is done all threads are joined and the thread ends
+*/
 void AssetLoader::loadAsyncWorker(void (*when_complete)())
 {
   // this will be spawned on seperate thread, which will load assets
@@ -57,17 +62,20 @@ void AssetLoader::loadAsyncWorker(void (*when_complete)())
   when_complete();
 }
 
-
+/*
+* begin the process of loading assets in the background.
+* This will spin up a new thread to handle the threads so the main thread can keep doing stuff while this runs 
+*/
 void AssetLoader::loadAssetsAsync(void (*when_complete)())
 {
-  std::thread depression = std::thread(&AssetLoader::loadAsyncWorker,this, when_complete);
-  depression.detach();
+  std::thread loader = std::thread(&AssetLoader::loadAsyncWorker,this, when_complete);
+  loader.detach();
 }
 void AssetLoader::loadAssetsAsync()
 {
   auto doNothing = []{};
-  std::thread depression = std::thread(&AssetLoader::loadAsyncWorker,this, doNothing);
-  depression.detach();
+  std::thread loader = std::thread(&AssetLoader::loadAsyncWorker,this, doNothing);
+  loader.detach();
 
 }
 

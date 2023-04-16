@@ -4,7 +4,7 @@
 
 int RenderModel::g_meshIDbyName(std::string _name)
 {
-	for (Mesh& m : meshes) {
+	for (Mesh& m : *meshes.get()) {
 		if (m.name.compare(_name) == 0)
 			return m.ID;
 	}
@@ -37,10 +37,10 @@ int RenderModel::attachMesh(CPU_Geometry& _geometry)
 	mesh.numberOfVerticies = _geometry.verts.size();
 	mesh.numberOfIndicies = _geometry.indicies.size();
 	//add the mesh to the array
-	meshes.push_back(mesh);
+	meshes.get()->emplace_back(std::move(mesh));
 	//sorting the meshes lets us batch draws without having to rebind the same texture multiple times
 	//std::sort(meshes.begin(), meshes.end(), [](const Mesh a, const Mesh b) -> bool {return a.textureIndex < b.textureIndex; });
-	return mesh.ID;
+	return currentMeshID - 1;
 }
 
 bool RenderModel::attachTexture(std::string _textureName, unsigned int _meshID)
@@ -48,15 +48,15 @@ bool RenderModel::attachTexture(std::string _textureName, unsigned int _meshID)
 	_textureName = "textures/" + _textureName;
 	std::cout << "attaching texture " << _textureName << '\n';
 	//find the mesh with the corresponding ID
-	for (Mesh& mesh : meshes) {
+	for (Mesh& mesh : *meshes.get()) {
 		if (mesh.ID == _meshID) {
 			if (mesh.textureIndex != -1) {
 				return false;
 				std::cout << "FAIL: Mesh already has an attached texture\n";
 			}
 			//determine if the model already contains the texture in its memory
-			for (unsigned int i = 0; i < textures.size(); i++) {
-				if (textures[i]->getPath().compare(_textureName) == 0) {
+			for (unsigned int i = 0; i < textures.get()->size(); i++) {
+				if ((*textures.get())[i]->getPath().compare(_textureName) == 0) {
 					//if it already exists then set the meshes textureIndex to the right value
 					//check that the mesh doesn't already have a texture attached
 					mesh.textureIndex = i;
@@ -65,8 +65,8 @@ bool RenderModel::attachTexture(std::string _textureName, unsigned int _meshID)
 				}
 			}
 			//if no texture already exists then make a new one and attach it
-			textures.push_back(new Texture(_textureName, GL_LINEAR));
-			mesh.textureIndex = textures.size() - 1;
+			textures.get()->push_back(new Texture(_textureName, GL_LINEAR));
+			mesh.textureIndex = textures.get()->size() - 1;
 			//std::sort(meshes.begin(), meshes.end(), [](const Mesh a, const Mesh b) -> bool {return a.textureIndex < b.textureIndex; });
 			std::cout << "SUCCESS: New texture created\n";
 			return true;
@@ -87,7 +87,7 @@ bool RenderModel::attachTexture(std::string _texturePath, std::string _meshName)
 
 void RenderModel::setModelColor(const glm::vec3 _color)
 {
-	for (Mesh& mesh : meshes) {
+	for (Mesh& mesh : *meshes.get()) {
 		mesh.meshColor = _color;
 	}
 }
@@ -97,7 +97,7 @@ bool RenderModel::setMeshLocalTransformation(glm::mat4 _transformation, std::str
 	unsigned int ID = g_meshIDbyName(_meshName);
 	if(ID == -1)
 		return false;
-	meshes[getMeshIndex(ID)].localTransformation = _transformation;
+	(*meshes.get())[getMeshIndex(ID)].localTransformation = _transformation;
 	return true;
 }
 
