@@ -103,9 +103,12 @@ struct Car {
     void cleanupVehicle();
     void baseSetup();
     void setup1();
+    void setup2();
+    
+    float carSpeed();
 
     // movement 
-    Command drive(ecs::Scene& scene, float deltaTime);
+    Command drive(Guid carGuid, ecs::Scene& scene, float deltaTime);
     void setClosestTetherPoint(PxTransform _loc);
     void setClosestTetherPoint(glm::vec3 _loc);
     bool getCTethered();
@@ -113,7 +116,7 @@ struct Car {
     bool Jump();
     bool AiJump();
     void Car::checkFlipped(PxTransform carPose);
-
+    void BoostForward(float magnitude);
     // navigation
     glm::vec3 getForwardDir();
 
@@ -126,6 +129,7 @@ struct Car {
     // position
     PxRigidBody* getVehicleRigidBody();
     glm::vec3 getPosition();
+    PxTransform getTransformPx();
 
     /////////////////////////////////////////
     // AI methods / etc.  ///////////////////
@@ -139,9 +143,11 @@ private:
     void keepRigidbodyUpright(PxRigidBody* rigidbody);
 
     float STRENGTH_UP_CORRECTION{300.f};
-    float m_stuckTimer;
-
-
+    float m_stuckTimer{0.f};
+    float m_timeSinceLastBoost{0.f};
+    float m_timeSinceLastRamp{0.f};
+    bool m_grounded{false};
+    float m_timeSinceLastJump{0.f};
 };
 
 

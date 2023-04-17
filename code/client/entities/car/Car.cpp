@@ -1,14 +1,28 @@
 #include "Car.h"
 #include "../../Input.h"
 #include "glm/glm.hpp"
+#include <glm/gtx/projection.hpp>
 #include "../../utils/PxConversionUtils.h"
 
 #include "../physics/LevelCollider.h"
+#include "../../systems/RaceSystem.h"
 
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 #include <iostream>
+
+physx::PxShape* castRayCheckShape(PxScene* scene, PxVec3 origin, PxVec3 dir, float dist)
+{
+    PxRaycastBuffer hit;
+
+    bool status = scene->raycast(origin, dir, dist, hit);
+    if (status)
+    {
+        return hit.block.shape;
+    }
+    return nullptr;
+}
 
 const char* gVehicleDataPath = "vehicledata";
 
@@ -38,7 +52,8 @@ glm::vec3 Car::getTrackNormal()
 void Car::keepRigidbodyUpright(PxRigidBody* rigidbody)
 {
 
-        if ( m_Vehicle.mBaseState.tireSlipStates->slips[0] > 150.f)
+        if (!m_grounded)
+        // if ( m_Vehicle.mBaseState.tireSlipStates->slips[0] > 150.f)
         {
             // correct the vehicles orientation
 
@@ -113,7 +128,7 @@ void Car::Initialize(DriverType type, PxTransform initialPose, physics::PhysicsS
   if (!result)
   {
     std::cerr << "Could not load vehicle engine params.\n";
-    return;
+    return; 
   }
 
   setPhysXIntegrationParams(m_Vehicle.mBaseParams.axleDescription,
@@ -204,6 +219,7 @@ void Car::carImGui() {
         ImGui::Text("Car rotation: %f, %f, %f, %f", vehicleRot.w, vehicleRot.x, vehicleRot.y, vehicleRot.z);
         ImGui::Text("Friction? %f, %f", m_Vehicle.mBaseState.tireSlipStates->slips[0], m_Vehicle.mBaseState.tireSlipStates->slips[1]);
         ImGui::Text("Is wrong way?: %s", isWrongWay() ? "true" : "false");
+        ImGui::Text("Grounded?: %s", m_grounded ? "true" : "false");
         
         ImGui::TreePop();
 
@@ -282,6 +298,40 @@ void Car::setup1() {
     m_Vehicle.mEngineDriveParams.gearBoxParams.switchTime = 0.2f;
 }
 
+void Car::setup2() {
+    // For rigid body moi calculations
+    // x= (L^2 + H^2)*M/12, y=(W^2+L^2)*M/12, z=(H^2+W^2)*M/12
+    //width = 1.68
+    //height = 1.3
+    //length = 2.74
+    m_Vehicle.mBaseParams.rigidBodyParams.mass = 500.f;
+    m_Vehicle.mBaseParams.rigidBodyParams.moi.x = 3200;
+    m_Vehicle.mBaseParams.rigidBodyParams.moi.y = 2000;
+    m_Vehicle.mBaseParams.rigidBodyParams.moi.z = 3200;
+
+    m_Vehicle.mBaseParams.wheelParams[0].radius = .6f;
+    m_Vehicle.mBaseParams.wheelParams[0].halfWidth = .3f;
+    m_Vehicle.mBaseParams.wheelParams[1].radius = .6f;
+    m_Vehicle.mBaseParams.wheelParams[1].halfWidth = .3f;
+    m_Vehicle.mBaseParams.wheelParams[2].radius = .6f;
+    m_Vehicle.mBaseParams.wheelParams[2].halfWidth = .3f;
+    m_Vehicle.mBaseParams.wheelParams[3].radius = .6f;
+    m_Vehicle.mBaseParams.wheelParams[3].halfWidth = .3f;
+
+    m_Vehicle.mBaseParams.steerResponseParams.maxResponse = 0.6f;
+    m_Vehicle.mBaseParams.brakeResponseParams->wheelResponseMultipliers[0] = 0.5f;
+    m_Vehicle.mBaseParams.brakeResponseParams->wheelResponseMultipliers[1] = 0.5f;
+    m_Vehicle.mBaseParams.tireForceParams->latStiffY = 3186990.625f;
+
+    m_Vehicle.mEngineDriveParams.engineParams.moi = 0.5;
+    m_Vehicle.mEngineDriveParams.engineParams.peakTorque = 500.f;
+    m_Vehicle.mEngineDriveParams.engineParams.maxOmega = 600.f;
+    m_Vehicle.mEngineDriveParams.autoboxParams.latency = 0.5f;
+    m_Vehicle.mEngineDriveParams.gearBoxParams.switchTime = 0.1f;
+}
+
+
+
 void Car::resetModifications() {
     // ORIGINALLY MEANT TO RESET THE CENTER OF GRAVITY, BUT WORKS BETTER WITHOUT CHANGING ?
     m_Vehicle.mPhysXParams.physxActorCMassLocalPose.p = c_mass_init_v.p;
@@ -356,6 +406,19 @@ bool Car::AiJump() {
     return true;
 }
 
+void Car::BoostForward(float magnitude)
+{
+    // will boost the car forward !! 
+
+    // get the heading direction of the car and scale it by the magnitude of the boost
+    glm::vec3 _heading = getForwardDir();
+    PxVec3 heading = GLMtoPx(_heading);
+
+    // Caution force is proportional to the mass of the car, the lower the mass, the harder the force will be applied
+    m_Vehicle.mPhysXState.physxActor.rigidBody->addForce(heading * magnitude, PxForceMode::eIMPULSE, true);
+}
+
+
 
 void Car::Update(Guid carGuid, ecs::Scene& scene, float deltaTime)
 {
@@ -363,10 +426,68 @@ void Car::Update(Guid carGuid, ecs::Scene& scene, float deltaTime)
   float delta_seconds = deltaTime;
   assert(delta_seconds > 0.f && delta_seconds < 0.2000001f);  
 
-  Command command = drive(scene, deltaTime);
+  m_timeSinceLastBoost += delta_seconds;
+  m_timeSinceLastRamp += delta_seconds;
+  m_timeSinceLastJump += delta_seconds;
+
+  Command command = drive(carGuid, scene, deltaTime);
   keepRigidbodyUpright(m_Vehicle.mPhysXState.physxActor.rigidBody);
 
   checkFlipped(getVehicleRigidBody()->getGlobalPose());
+
+  PxTransform local = getTransformPx();
+  // local down vector
+  PxVec3 down(0.f,-1.f,0.f);
+
+  bool obstacle_under{false};
+  bool ramp_under{false};
+
+  PxShape* hitShape = castRayCheckShape(physicsSystem->m_Scene, local.p, down, 10.f);
+  // check for obstacles in front of the ai    
+  if (hitShape != nullptr)
+  {
+    for (Guid entity : ecs::EntitiesInScene<ObstacleCollider>(scene))
+    {
+        // get the level collider
+        ObstacleCollider& oc = scene.GetComponent<ObstacleCollider>(entity);
+        obstacle_under = obstacle_under || (oc.getShape() == hitShape);
+    }
+    for (Guid entity : ecs::EntitiesInScene<RampCollider>(scene))
+    {
+        // get the level collider
+        RampCollider& oc = scene.GetComponent<RampCollider>(entity);
+        ramp_under = ramp_under || (oc.getShape() == hitShape);
+    }
+
+    // check if they should get boosted :p 
+    if (obstacle_under)
+    {
+        std::cout << "boost detected!!!\n";
+        if (m_timeSinceLastBoost > 1.5f)
+        {
+            BoostForward(4500.f);
+            m_timeSinceLastBoost = 0.f;
+
+        }
+    }
+    if (ramp_under)
+    {
+        std::cout << "ramp detected!!!\n";
+        if (m_timeSinceLastRamp > 1.5f)
+        {
+            BoostForward(10000.f);
+            m_timeSinceLastRamp = 0.f;
+        }
+    }
+
+  }
+
+  hitShape = castRayCheckShape(physicsSystem->m_Scene, local.p, local.q.rotate(down), 1.f);
+  for (Guid entity : ecs::EntitiesInScene<RoadCollider>(scene))
+  {
+    RoadCollider& rc = scene.GetComponent<RoadCollider>(entity);
+    m_grounded = (rc.getShape() == hitShape) ? true : false;
+  }
 
   m_Vehicle.mCommandState.brakes[0] = command.brake;
   m_Vehicle.mCommandState.nbBrakes = 1;
@@ -448,7 +569,14 @@ glm::vec3 Car::getPosition()
     return PxtoGLM(carPose.p);
 }
 
-Command Car::drive(ecs::Scene& scene, float deltaTime)
+
+PxTransform Car::getTransformPx()
+{
+    PxTransform carPose = m_Vehicle.mPhysXState.physxActor.rigidBody->getGlobalPose();
+    return carPose;
+}
+
+Command Car::drive(Guid carGuid, ecs::Scene& scene, float deltaTime)
 {
 
     Command command = {0.f, 0.f, 0.f, m_TargetGearCommand};
@@ -456,7 +584,9 @@ Command Car::drive(ecs::Scene& scene, float deltaTime)
     // now we have to get the controller mapping
     ControllerInput::controller;
 
-    if (m_driverType == DriverType::COMPUTER)
+    ProgressTracker& pt = scene.GetComponent<ProgressTracker>(carGuid);
+
+    if (m_driverType == DriverType::COMPUTER || (m_driverType == HUMAN && pt.isFinished) )
     {
         return pathfind(scene,deltaTime);
     }
@@ -634,6 +764,11 @@ bool castRay(PxScene* scene, PxVec3 origin, PxVec3 dir, float dist, physx::PxSha
     return false;
 }
 
+
+
+
+
+
 Command Car::pathfind(ecs::Scene& scene, float deltaTime)
 {
 
@@ -689,15 +824,17 @@ Command Car::pathfind(ecs::Scene& scene, float deltaTime)
     bool hitting_wall{false};
     bool obstacle_ahead{false};
 
+    bool obstacle_under{false};
+
     // split into left and right
-    bool hit = castRay(physicsSystem->m_Scene, carPose.p, GLMtoPx(steering_rays[0]), 10.f, level_c->getShape());
+    bool hit = castRay(physicsSystem->m_Scene, carPose.p, GLMtoPx(steering_rays[0]), 16.f, level_c->getShape());
     if (hit)
     {
         // ray hit forward left
         forced_turn_right = true;
     }
 
-    hit = castRay(physicsSystem->m_Scene, carPose.p, GLMtoPx(steering_rays[1]), 10.f, level_c->getShape());
+    hit = castRay(physicsSystem->m_Scene, carPose.p, GLMtoPx(steering_rays[1]), 16.f, level_c->getShape());
     if (hit)
     {
         // ray hit forward right
@@ -723,7 +860,16 @@ Command Car::pathfind(ecs::Scene& scene, float deltaTime)
     if (obstacle_ahead)
     {
         // std::cout << "ai needs to jump!" << std::endl;
-        AiJump();
+
+        // also check the car is going fast enough for a jump to make sense
+        if (carSpeed() > 10.f)
+        {
+            AiJump();
+        } else {
+            // need to correct
+            hitting_wall = true;
+            m_stuckTimer = 10.f;
+        }
     }
 
 
@@ -750,7 +896,7 @@ Command Car::pathfind(ecs::Scene& scene, float deltaTime)
     float actualAngle = acos(angleBetween);
 
     // if almost parallel, don't worry about steering
-    if (abs(actualAngle) < 0.08f)
+    if (abs(actualAngle) < 0.23f) // 30 degrees (rads)
     {
         command.steer = 0.0f;
     } else {
@@ -764,9 +910,9 @@ Command Car::pathfind(ecs::Scene& scene, float deltaTime)
         // float normalized "turning" angle
 
 
-        if (forced_turn_left || forced_turn_right)
+        if ( (abs(actualAngle) > M_PI / 3 ) && (forced_turn_left || forced_turn_right))
         {
-            command.throttle = 0.5f;
+            command.throttle = 0.80f;
             
             // scale steering based on distance to wall?
 
@@ -780,10 +926,15 @@ Command Car::pathfind(ecs::Scene& scene, float deltaTime)
             command.throttle = 1.f;
             // normal turning logic
 
-            float maxAngle = M_PI / 3.f; 
+            float maxAngle = M_PI / 4.f;  // higher max angle = closer AI follows path
 
-            if (abs(actualAngle) > maxAngle) // if the turning angle is more gentle
+            if (abs(actualAngle) < maxAngle) // if the turning angle is more gentle
             {
+                // slow down to steer (to correct faster) threshold
+                if (abs(actualAngle) > M_PI_2)
+                {
+                    command.throttle = 0.65f;
+                }
 
                 // use the heading direction as the target direction instead 
                 {
@@ -808,11 +959,11 @@ Command Car::pathfind(ecs::Scene& scene, float deltaTime)
 
     }
 
-    if (m_stuckTimer > 0.8f && hitting_wall)
+    if (m_stuckTimer > 0.7f && hitting_wall)
     {
         // reverse
         m_TargetGearCommand = 0; // put in reverse
-        command.throttle = 0.5f;
+        command.throttle = 0.6f;
 
         // calulate the way they want to steer to be in line with the track!
         {
@@ -839,3 +990,12 @@ Command Car::pathfind(ecs::Scene& scene, float deltaTime)
     return command;
 }
 
+float Car::carSpeed()
+{
+    // return the projection of the car's linear velocity on it's heading/forward dir
+
+    glm::vec3 v = PxtoGLM(m_Vehicle.mPhysXState.physxActor.rigidBody->getLinearVelocity());
+    glm::vec3 u = getForwardDir();
+
+    return glm::length(v);
+}

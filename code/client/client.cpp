@@ -45,7 +45,9 @@
 #include <chrono>  // chrono::system_clock
 #include <ctime>   // localtime
 
+#include "systems/londonfog/components.h"
 
+#include "utils/AssetLoader.h"
 
 float startCountdown{5.0f};
 
@@ -145,7 +147,108 @@ void gamePlayToggle(bool toggle, ecs::Scene &mainScene, std::vector<Guid> aiCars
 	}
 }
 
+enum SCENES {
+	MAIN_MENU,
+	RACING
+};
+
+
+/**
+ * Ignore this for now :(
+*/
+void InitializeMainMenu(ecs::Scene& menuScene, PhysicsSystem& physicsSystem, physx::PxMaterial* lMaterial)
+{
+	// load the track
+	// load the nav splines
+	// load the vehicles
+
+	CPU_Geometry demo_nav_spline;
+	GraphicsSystem::importSplineFromOBJ(demo_nav_spline,"demo-track/demo-nav.obj");
+	Curve aiNavigationPath{demo_nav_spline.verts};
+	
+	
+ 	static float levelMaterial[3] = { 0.5f, 1.0f, 0.10f};
+
+	std::cout << "Component initalization finished\n";
+
+	// spawn a vehicle every once in a while along the track
+
+	std::vector<glm::vec3> spawnPoints;
+
+	for (int i = 0; i < demo_nav_spline.verts.size(); i++)
+	{
+		if (i % 8 == 0)
+		{
+			spawnPoints.push_back(demo_nav_spline.verts[i]);
+		}
+	}
+
+
+	int numCars = spawnPoints.size();
+
+	std::cout << "Starting main menu with " << numCars << " drivers!";
+
+	/* --------------------------- */
+	/* 	Spawn the cars						 */
+	/* --------------------------- */
+
+	std::vector<Guid> AIGuids;
+	std::vector<NavPath> aiPaths;
+	aiPaths.reserve(spawnPoints.size());
+
+	// SPAWN THE AI CARS
+	// skip the first spot (player driven vehicle) 
+	for (int i = 0; i < spawnPoints.size(); i++)
+	{		
+		auto& spawnPoint = spawnPoints[i];
+		aiPaths.emplace_back(&aiNavigationPath);
+		auto& navPath = aiPaths[aiPaths.size() - 1];
+		Guid aiCarGuid = spawnCar(DriverType::COMPUTER, menuScene,&physicsSystem,spawnPoint,aiNavigationPath.forward(spawnPoint), &aiNavigationPath, &navPath);
+
+		AIGuids.push_back(aiCarGuid);
+		setupCarVFX(menuScene, aiCarGuid);
+	}
+
+
+	// spawn the track colliders
+	// load the road 
+	CPU_Geometry new_level_geom = CPU_Geometry();
+	GraphicsSystem::importOBJ(new_level_geom, "demo-track/colliders/road.obj");
+
+	Guid level_collider_e = menuScene.CreateEntity().guid;
+	menuScene.AddComponent(level_collider_e, RoadCollider());
+	RoadCollider& new_level_collider = menuScene.GetComponent<RoadCollider>(level_collider_e);
+	new_level_collider.Initialize(new_level_geom, physicsSystem);
+	physx::PxTriangleMesh* new_level_collider_mesh = new_level_collider.cookLevel(glm::scale(glm::mat4(1), glm::vec3(1.0)));
+	new_level_collider.initLevelRigidBody(new_level_collider_mesh, lMaterial);
+
+	// load the walls
+	CPU_Geometry level_wall_geom = CPU_Geometry();
+	GraphicsSystem::importOBJ(level_wall_geom, "demo-track/colliders/walls.obj");
+
+	Guid level_wall_e = menuScene.CreateEntity().guid;
+	menuScene.AddComponent(level_wall_e, LevelCollider());
+	LevelCollider& level_wall_collider = menuScene.GetComponent<LevelCollider>(level_wall_e);
+	level_wall_collider.Initialize(level_wall_geom, physicsSystem);
+	physx::PxTriangleMesh* level_wall_collider_mesh = level_wall_collider.cookLevel(glm::scale(glm::mat4(1), glm::vec3(1.0)));
+	level_wall_collider.initLevelRigidBody(level_wall_collider_mesh, lMaterial);
+
+	// render the basic level
+
+	ecs::Entity road_e = menuScene.CreateEntity();
+	TransformComponent road_t = TransformComponent();
+	RenderModel road_r = RenderModel();
+	GraphicsSystem::importOBJ(road_r,"demo-track/intro-track.obj");
+	road_r.castsShadow = true;
+	menuScene.AddComponent(road_e.guid, road_r);
+	menuScene.AddComponent(road_e.guid, road_t);
+
+	// start loading other assets lol
+
+}
+
 int main(int argc, char* argv[]) {
+
 	//RUN_GRAPHICS_TEST_BENCH();
 	printf("Starting main\n");
 
@@ -165,6 +268,19 @@ int main(int argc, char* argv[]) {
 	 */
 
 	// first and foremost, create a scene.
+
+
+
+	// register and begin loading all assets
+	g_Assets.registerAsset("zz-track-nav.obj", "zz-track-path", SPLINE); 
+	g_Assets.registerAsset("zz-track-ai-nav.obj", "zz-track-ai-path", SPLINE); 
+
+	// load the assets (may want to perform on separate thread for efficiency)
+	g_Assets.loadAssets();
+	
+	// now you can access & use them!
+
+
 	ecs::Scene mainScene;
 
 	GraphicsSystem gs = GraphicsSystem();
@@ -174,8 +290,7 @@ int main(int argc, char* argv[]) {
 
 
 
-	CPU_Geometry zzPathGeom;
-	GraphicsSystem::importSplineFromOBJ(zzPathGeom, "zz-track-nav.obj");
+	CPU_Geometry& zzPathGeom = g_Assets.getSpline("zz-track-path");
 	
 	glm::vec3 desiredSpawnLocation = {-4.108957, 3.397303, -43.794819}; // hardcoded value near the straight strip of the track
 	Curve raceTrackingCurve(zzPathGeom.verts);
@@ -237,8 +352,7 @@ int main(int argc, char* argv[]) {
 	// ai path is lower resolution curve to help prevent ai from "overcorrecting"
 	// but this could also be fixed by fixing normal computation
 	// in steering code
-	CPU_Geometry nav_geom;
-	GraphicsSystem::importSplineFromOBJ(nav_geom, "zz-track-ai-nav.obj");
+	CPU_Geometry& nav_geom = g_Assets.getSpline("zz-track-ai-path");
 	Curve aiNavigationPath{nav_geom.verts};
 
 
@@ -336,6 +450,19 @@ int main(int argc, char* argv[]) {
 		//mainScene.AddComponent(exhausePipes[i].guid, flame_p);
 		
 	}
+
+	// use something like this for rendering player color/number/name
+	// ecs::Entity wrongWaySign = mainScene.CreateEntity();
+	// TransformComponent wrongWaySign_ti = TransformComponent(testCar.getVehicleRigidBody());
+	// VFXBillboard wrongWay_b = VFXBillboard("textures/wrongway.png", glm::vec3(1, 1, 0));
+	// wrongWaySign_ti.setScale(glm::vec3(6, 3, 0));
+	// wrongWaySign_ti.setPosition(glm::vec3(0, 2.2, -3));
+
+	// mainScene.AddComponent(wrongWaySign.guid, wrongWaySign_ti);
+	// mainScene.AddComponent(wrongWaySign.guid, wrongWay_b);
+
+	// TransformComponent& wrongWaySign_t = mainScene.GetComponent<TransformComponent>(wrongWaySign.guid);
+
 	
 	RaceTracker raceSystem{raceTrackingCurve, desiredSpawnLocation};	
 
@@ -393,7 +520,7 @@ int main(int argc, char* argv[]) {
 
 	// load the obstacles
 	std::vector<Guid> obstacles;
-	for (int i = 1; i <= 11; i++)
+	for (int i = 1; i <= 9; i++)
 	{
 		char buffer[50];
 
@@ -406,6 +533,34 @@ int main(int argc, char* argv[]) {
 		Guid obstacle_collider_e = mainScene.CreateEntity().guid;
 		mainScene.AddComponent(obstacle_collider_e, ObstacleCollider());
 		ObstacleCollider& new_obstacle_collider = mainScene.GetComponent<ObstacleCollider>(obstacle_collider_e);
+		new_obstacle_collider.Initialize(obstacle_geom, physicsSystem);
+		physx::PxTriangleMesh* new_obstacle_collider_mesh = new_obstacle_collider.cookLevel(glm::scale(glm::mat4(1), glm::vec3(1.0)));
+		new_obstacle_collider.initLevelRigidBody(new_obstacle_collider_mesh, lMaterial);
+		
+	
+		TransformComponent obs_t = TransformComponent();
+		RenderModel obs_r = RenderModel();
+		GraphicsSystem::importOBJ(obs_r,buffer);
+		mainScene.AddComponent(obstacle_collider_e, obs_t);
+		mainScene.AddComponent(obstacle_collider_e, obs_r);
+	}
+
+
+		// load the ramps!
+	std::vector<Guid> ramps;
+	for (int i = 1; i <= 2; i++)
+	{
+		char buffer[50];
+
+		sprintf(buffer, "ramps/Ramp%03d.obj", i);
+		// load in obstacle collider & send it for rendering
+
+		CPU_Geometry obstacle_geom = CPU_Geometry();
+		GraphicsSystem::importOBJ(obstacle_geom, buffer);
+
+		Guid obstacle_collider_e = mainScene.CreateEntity().guid;
+		mainScene.AddComponent(obstacle_collider_e, RampCollider());
+		RampCollider& new_obstacle_collider = mainScene.GetComponent<RampCollider>(obstacle_collider_e);
 		new_obstacle_collider.Initialize(obstacle_geom, physicsSystem);
 		physx::PxTriangleMesh* new_obstacle_collider_mesh = new_obstacle_collider.cookLevel(glm::scale(glm::mat4(1), glm::vec3(1.0)));
 		new_obstacle_collider.initLevelRigidBody(new_obstacle_collider_mesh, lMaterial);
@@ -471,6 +626,11 @@ int main(int argc, char* argv[]) {
 
 		std::cout << "initalization finished, beginning game\n";
 
+
+	// initialize UI
+
+	LondonFog ui;
+
 	// GAME LOOP
 	while (!quit) {
 		Timestep timestep; // Time since last frame
@@ -498,10 +658,26 @@ int main(int argc, char* argv[]) {
 			}
 		}
 
+		// check for new controllers
+
+
+
 		// Reset dampening values if they are changed every frame (used after car is reset) 
 		//TODO:  May need to put in an if check, and factor out ?
 		testCar.m_Vehicle.mPhysXState.physxActor.rigidBody->setLinearDamping(default_lin_damp);
 		testCar.m_Vehicle.mPhysXState.physxActor.rigidBody->setAngularDamping(default_ang_damp);
+
+		// if (testCar.isWrongWay())
+		// {
+		// 	wrongWaySign_t.setScale(glm::vec3(6, 3, 0));
+		// 	bill_t.setPosition(glm::vec3(0, 20, 0));
+
+
+		// } else {
+		// 	wrongWaySign_t.setScale(glm::vec3(0, 0, 0));
+		// 	bill_t.setPosition(glm::vec3(20000000, 2000000, 0));
+
+		// }
 
 		for (int i = 0; i < AIGuids.size(); i++) {
 			Car& aiCar = mainScene.GetComponent<Car>(AIGuids.at(i));
@@ -522,12 +698,13 @@ int main(int argc, char* argv[]) {
 
 			if (windowEvent.type == SDL_CONTROLLERDEVICEADDED) {
 				std::cout << "Adding controller\n";
-				ControllerInput::init_controller();
+				ControllerInput::initControllers();
 			}
 
 			if (windowEvent.type == SDL_CONTROLLERDEVICEREMOVED) {
-				std::cout << "removing controller\n";
-				ControllerInput::deinit_controller();
+				std::cout << "a controller was unplugged!\n";
+				// ControllerInput::deinit_controller();
+				std::cout << "pause here?!?!?!?\n";
 			}
 
 			if (windowEvent.type == SDL_QUIT)
@@ -550,8 +727,10 @@ int main(int argc, char* argv[]) {
 					case SDLK_F1:
 						if (gamePaused) {
 							gamePaused = false;
+							ui.m_status = RACING_SCREEN;
 						}
 						else {
+							ui.m_status = PAUSE_SCREEN;
 							gamePaused = true;
 						}
 					case SDLK_p:
@@ -699,6 +878,10 @@ int main(int argc, char* argv[]) {
 						vehicleTuning(testCar.m_Vehicle, physicsSystem);
 					if (ImGui::CollapsingHeader("Engine Tuning"))
 						engineTuning(testCar.m_Vehicle);
+
+					ProgressTracker& ptracker = mainScene.GetComponent<ProgressTracker>(carGuid);
+					ImGui::Text("checkpoint: %d", ptracker.checkpoints);
+					ImGui::Text("index: %d", ptracker.curveIndex);
 					ImGui::EndTabItem();
 				}
 				if (ImGui::BeginTabItem("Graphics")) {
@@ -736,24 +919,32 @@ int main(int argc, char* argv[]) {
 			ImGuiWindowFlags_NoDecoration |			// no decoration; only the text should be visible
 			ImGuiWindowFlags_NoTitleBar;			// no title; only the text should be visible
 		
-		//Lap counter
-		ImGui::SetNextWindowPos(ImVec2(10, 10));
-		ImGui::Begin("UI", (bool*)0, textWindowFlags);
-		ImGui::SetWindowFontScale(2.f);
-		ImGui::PushFont(CabalBold);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Lap: %d/%d", raceSystem.getLapCount(carGuid), raceSystem.MAX_LAPS);
-		ImGui::PopFont();
-		ImGui::End();
-		
-		//Lap counter
-		ImGui::SetNextWindowPos(ImVec2(10, 30));
-		ImGui::Begin("UI", (bool*)0, textWindowFlags);
-		ImGui::SetWindowFontScale(2.f);
-		ImGui::PushFont(CabalBold);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Rank: %d/%d", raceSystem.getRanking(carGuid), spawnPoints.size() );
-		ImGui::PopFont();
-		ImGui::End();
 
+		// londonfog::setStyle();
+
+
+		// //Lap counter
+		// ImGui::SetNextWindowPos(ImVec2(10, 10));
+		// ImGui::Begin("UI", (bool*)0, textWindowFlags);
+		// ImGui::SetWindowFontScale(2.f);
+		// ImGui::PushFont(CabalBold);
+		// ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Lap: %d/%d", raceSystem.getLapCount(carGuid), raceSystem.MAX_LAPS);
+		// ImGui::PopFont();
+		// ImGui::End();
+		
+		// //Lap counter
+		// ImGui::SetNextWindowPos(ImVec2(10, 30));
+		// ImGui::Begin("UI", (bool*)0, textWindowFlags);
+		// ImGui::SetWindowFontScale(2.f);
+		// ImGui::PushFont(CabalBold);
+		// ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Rank: %d/%d", raceSystem.getRanking(carGuid), spawnPoints.size() );
+		// ImGui::PopFont();
+		// ImGui::End();
+
+
+
+		ui.drawMenu({0,0,1200,800});
+		ui.drawHUD(carGuid, mainScene,{0,0,1200,800}, raceSystem);
 
 		//you win message
 		static int counter = 0;
