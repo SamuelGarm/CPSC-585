@@ -42,10 +42,14 @@
 
 #include "systems/RaceSystem.h"
 
+#include "entities/car/CollisionSounds.h"
+
 #include <chrono>  // chrono::system_clock
 #include <ctime>   // localtime
 
+#include "systems/londonfog/components.h"
 
+#include "utils/AssetLoader.h"
 
 float startCountdown{5.0f};
 
@@ -61,7 +65,7 @@ glm::vec3 calculateSpherePoint(float s, float t)
 	return(glm::vec3(x, y, z));
 }
 
-bool showImgui = true;
+bool showImgui = false;
 
 int lapCount = 0;
 bool isFinished = false;
@@ -70,12 +74,13 @@ bool navPathToggle = true;
 
 // Boolean to toggle gameplay mode
 // (follow cam, full level mesh, navmesh off, backface culling off)
-bool gameplayMode = false;
+bool gameplayMode = true;
 bool raceCountdown = false;
 bool gamePaused = false;
 
 uint32_t lastTime_millisecs;
 
+int numberPlayers = 1;
 
 void resetLevel(Car& testCar, std::vector<Guid> ais, ecs::Scene& mainScene, std::vector<glm::vec3> spawnPoints, RaceTracker& raceSystem, float& acc_t, glm::vec3 forward)
 {
@@ -86,7 +91,7 @@ void resetLevel(Car& testCar, std::vector<Guid> ais, ecs::Scene& mainScene, std:
 		if (i == 0) {
 			testCar.m_driverType = DriverType::HUMAN; // Hardcoding first player to be reset to a human, as there will always be one human player
 		}
-		if (i < ControllerInput::getNumberPlayers()) {
+		if (i < numberPlayers) {
 			testCar.m_driverType = DriverType::HUMAN;
 		}
 		Car& aiCar = mainScene.GetComponent<Car>(ais.at(i));
@@ -94,6 +99,12 @@ void resetLevel(Car& testCar, std::vector<Guid> ais, ecs::Scene& mainScene, std:
 		aiCar.m_Vehicle.mPhysXState.physxActor.rigidBody->setLinearDamping(10000.f);
 		aiCar.m_Vehicle.mPhysXState.physxActor.rigidBody->setAngularDamping(10000.f);
 		aiCar.m_navPath->resetNav();
+		aiCar.m_Vehicle.mPhysXState.physxActor.rigidBody->clearForce(PxForceMode::eACCELERATION);
+		aiCar.m_Vehicle.mPhysXState.physxActor.rigidBody->clearForce(PxForceMode::eFORCE);
+		aiCar.m_Vehicle.mPhysXState.physxActor.rigidBody->clearForce(PxForceMode::eIMPULSE);
+		aiCar.m_Vehicle.mPhysXState.physxActor.rigidBody->clearForce(PxForceMode::eVELOCITY_CHANGE);
+		aiCar.m_timeSinceLastBoost = 10.f;
+		aiCar.m_timeSinceLastRamp = 10.f;
 	}
 
 	// Resets the lap count for all racers
@@ -104,8 +115,7 @@ void resetLevel(Car& testCar, std::vector<Guid> ais, ecs::Scene& mainScene, std:
 
 	// Starting up the race countdown
 	raceCountdown = true;
-	startCountdown = 5.0f;
-
+	startCountdown = 2.8f;
 }
 
 void gamePlayToggle(bool toggle, ecs::Scene &mainScene, std::vector<Guid> aiCars, GraphicsSystem &gs) {
@@ -115,7 +125,7 @@ void gamePlayToggle(bool toggle, ecs::Scene &mainScene, std::vector<Guid> aiCars
 		gs.s_cameraMode(3); // follow cam
 
 		raceCountdown = true;
-		startCountdown = 5.0f;
+		startCountdown = 2.8f;
 
 		// Turns off the direction line for all AI
 		for (int i = 0; i < aiCars.size(); i++) {
@@ -124,12 +134,11 @@ void gamePlayToggle(bool toggle, ecs::Scene &mainScene, std::vector<Guid> aiCars
 			AIDirection.setGeometry(blank);
 		}
 
-		showImgui = true;
 	}
 	else {
 		loadLevelMesh = false;
 		navPathToggle = true;
-		gs.s_cameraMode(1); // free cam
+		gs.s_cameraMode(3); // free cam
 
 		raceCountdown = false;
 		startCountdown = 0.f;
@@ -145,7 +154,13 @@ void gamePlayToggle(bool toggle, ecs::Scene &mainScene, std::vector<Guid> aiCars
 	}
 }
 
+enum SCENES {
+	MAIN_MENU,
+	RACING
+};
+
 int main(int argc, char* argv[]) {
+
 	//RUN_GRAPHICS_TEST_BENCH();
 	printf("Starting main\n");
 
@@ -165,6 +180,17 @@ int main(int argc, char* argv[]) {
 	 */
 
 	// first and foremost, create a scene.
+
+
+
+	// register and begin loading all assets
+	g_Assets.registerAsset("zz-track-nav.obj", "zz-track-path", SPLINE); 
+	g_Assets.registerAsset("zz-track-ai-nav.obj", "zz-track-ai-path", SPLINE); 
+
+	// load the assets (may want to perform on separate thread for efficiency)
+	g_Assets.loadAssets();
+	
+	// now you can access & use them!
 	ecs::Scene mainScene;
 
 	GraphicsSystem gs = GraphicsSystem();
@@ -174,8 +200,7 @@ int main(int argc, char* argv[]) {
 
 
 
-	CPU_Geometry zzPathGeom;
-	GraphicsSystem::importSplineFromOBJ(zzPathGeom, "zz-track-nav.obj");
+	CPU_Geometry& zzPathGeom = g_Assets.getSpline("zz-track-path");
 	
 	glm::vec3 desiredSpawnLocation = {-4.108957, 3.397303, -43.794819}; // hardcoded value near the straight strip of the track
 	Curve raceTrackingCurve(zzPathGeom.verts);
@@ -237,8 +262,7 @@ int main(int argc, char* argv[]) {
 	// ai path is lower resolution curve to help prevent ai from "overcorrecting"
 	// but this could also be fixed by fixing normal computation
 	// in steering code
-	CPU_Geometry nav_geom;
-	GraphicsSystem::importSplineFromOBJ(nav_geom, "zz-track-ai-nav.obj");
+	CPU_Geometry& nav_geom = g_Assets.getSpline("zz-track-ai-path");
 	Curve aiNavigationPath{nav_geom.verts};
 
 
@@ -246,10 +270,11 @@ int main(int argc, char* argv[]) {
 	std::vector<NavPath> aiPaths;
 	aiPaths.reserve(spawnPoints.size());
 
-	ControllerInput::initControllers();
 
 	// initialize the controllers
 	// then count the number of human players
+
+	std::vector names = getPlayerNames();
 
 	// SPAWN THE AI CARS
 	// skip the first spot (player driven vehicle) 
@@ -259,7 +284,7 @@ int main(int argc, char* argv[]) {
 		aiPaths.emplace_back(&aiNavigationPath);
 		auto& navPath = aiPaths[aiPaths.size() - 1];
 		// Guid aiCarGuid = spawnAIEntity(mainScene, &physicsSystem, car_e.guid, spawnPoint, &navPath);
-		Guid aiCarGuid = spawnCar(DriverType::COMPUTER, mainScene,&physicsSystem,spawnPoint, forward, &raceTrackingCurve, &navPath);
+		Guid aiCarGuid = spawnCar(DriverType::COMPUTER, mainScene,&physicsSystem,spawnPoint, forward, &raceTrackingCurve, &navPath, names[i]);
 
 		AIGuids.push_back(aiCarGuid);
 		setupCarVFX(mainScene, aiCarGuid);
@@ -269,24 +294,29 @@ int main(int argc, char* argv[]) {
 	// put them into human
 	// conditionally spawn the other cars lmao ? 
 	std::unordered_map<Guid, int> controllerMappings; // the controller -> car mapping
+	// int number_players = ControllerInput::getNumberPlayers();
+	
+	auto camerasCallback = [&](int number_players){
 
-	int number_players = ControllerInput::getNumberPlayers();
+		numberPlayers = number_players;
 
-	if (number_players == 0) number_players = 1; 
+		if (number_players == 0) number_players = 1; 
+		gs.s_camerasActive(number_players);
 
-	gs.s_camerasActive(number_players);
+		for (int i = 0; i < 4 && i < number_players; i++)
+		{
+			// get car at each guid
+			// if it's under ze number_players
+			// set it's driver to HUMAN
+			Car& testCar = mainScene.GetComponent<Car>(AIGuids[i]);
+			testCar.m_driverType = DriverType::HUMAN;
+			testCar.controllerIndex = i;
+			// controllerMappings[AIGuids[i]] = i;
+			gs.bindCameraToEntity(i, AIGuids[i]);
+		}
+	};
 
-	for (int i = 0; i < 4 && i < number_players; i++)
-	{
-		// get car at each guid
-		// if it's under ze number_players
-		// set it's driver to HUMAN
-		Car& testCar = mainScene.GetComponent<Car>(AIGuids[i]);
-		testCar.m_driverType = DriverType::HUMAN;
-		testCar.controllerIndex = i;
-		// controllerMappings[AIGuids[i]] = i;
-		gs.bindCameraToEntity(i, AIGuids[i]);
-	}
+
 
 	// bandaids for other calls that do player-only stuff
 	Car& testCar = mainScene.GetComponent<Car>(AIGuids[0]);
@@ -335,7 +365,7 @@ int main(int argc, char* argv[]) {
 		//mainScene.AddComponent(exhausePipes[i].guid, flame_p);
 		
 	}
-	
+
 	RaceTracker raceSystem{raceTrackingCurve, desiredSpawnLocation};	
 
 	//make an entity
@@ -387,12 +417,19 @@ int main(int argc, char* argv[]) {
 	CPU_Geometry obstacle_geom = CPU_Geometry();
 	GraphicsSystem::importOBJ(obstacle_geom, "obstacles-mesh.obj");
 
+	physx::PxFilterData obstacleFilter(COLLISION_FLAG_OBSTACLE, COLLISION_FLAG_OBSTACLE_AGAINST, 0, 0);
+
+	physx::PxShape* shape = level_wall_collider.getShape();
+	shape->setSimulationFilterData(obstacleFilter);
+
+	
+
 	gamePlayToggle(gameplayMode, mainScene, AIGuids, gs);
 
 
 	// load the obstacles
 	std::vector<Guid> obstacles;
-	for (int i = 1; i <= 11; i++)
+	for (int i = 1; i <= 9; i++)
 	{
 		char buffer[50];
 
@@ -405,6 +442,37 @@ int main(int argc, char* argv[]) {
 		Guid obstacle_collider_e = mainScene.CreateEntity().guid;
 		mainScene.AddComponent(obstacle_collider_e, ObstacleCollider());
 		ObstacleCollider& new_obstacle_collider = mainScene.GetComponent<ObstacleCollider>(obstacle_collider_e);
+		new_obstacle_collider.Initialize(obstacle_geom, physicsSystem);
+		physx::PxTriangleMesh* new_obstacle_collider_mesh = new_obstacle_collider.cookLevel(glm::scale(glm::mat4(1), glm::vec3(1.0)));
+		new_obstacle_collider.initLevelRigidBody(new_obstacle_collider_mesh, lMaterial);
+		
+	
+		TransformComponent obs_t = TransformComponent();
+		RenderModel obs_r = RenderModel();
+		GraphicsSystem::importOBJ(obs_r,buffer);
+		mainScene.AddComponent(obstacle_collider_e, obs_t);
+		mainScene.AddComponent(obstacle_collider_e, obs_r);
+
+		physx::PxShape * shape = new_obstacle_collider.getShape();
+		shape->setSimulationFilterData(obstacleFilter);
+	}
+
+
+		// load the ramps!
+	std::vector<Guid> ramps;
+	for (int i = 1; i <= 2; i++)
+	{
+		char buffer[50];
+
+		sprintf(buffer, "ramps/Ramp%03d.obj", i);
+		// load in obstacle collider & send it for rendering
+
+		CPU_Geometry obstacle_geom = CPU_Geometry();
+		GraphicsSystem::importOBJ(obstacle_geom, buffer);
+
+		Guid obstacle_collider_e = mainScene.CreateEntity().guid;
+		mainScene.AddComponent(obstacle_collider_e, RampCollider());
+		RampCollider& new_obstacle_collider = mainScene.GetComponent<RampCollider>(obstacle_collider_e);
 		new_obstacle_collider.Initialize(obstacle_geom, physicsSystem);
 		physx::PxTriangleMesh* new_obstacle_collider_mesh = new_obstacle_collider.cookLevel(glm::scale(glm::mat4(1), glm::vec3(1.0)));
 		new_obstacle_collider.initLevelRigidBody(new_obstacle_collider_mesh, lMaterial);
@@ -482,6 +550,29 @@ int main(int argc, char* argv[]) {
 
 		std::cout << "initalization finished, beginning game\n";
 
+
+	// initialize UI
+
+	LondonFog ui;
+
+
+	auto raceCompleteCallback = [&](int numberPlayers)
+	{
+		std::vector<Guid> humanGuids;
+
+		for (int i =0; i < numberPlayers; i++)
+		{
+			humanGuids.push_back(AIGuids[i]);
+		}
+
+		bool result = raceSystem.humanRacersFinished(humanGuids);
+
+		if (result && ui.m_status == RACING_SCREEN)
+		{
+			ui.m_status = RESULTS_SCREEN;
+		}
+	};
+
 	// GAME LOOP
 	while (!quit) {
 		Timestep timestep; // Time since last frame
@@ -509,6 +600,10 @@ int main(int argc, char* argv[]) {
 			}
 		}
 
+		// check for new controllers
+
+
+
 		// Reset dampening values if they are changed every frame (used after car is reset) 
 		//TODO:  May need to put in an if check, and factor out ?
 		testCar.m_Vehicle.mPhysXState.physxActor.rigidBody->setLinearDamping(default_lin_damp);
@@ -524,6 +619,17 @@ int main(int argc, char* argv[]) {
 		baseVariablesInit(testCar.m_Vehicle, physicsSystem);
 		engineVariablesInit(testCar.m_Vehicle);
 
+
+		// define some callback functions for the UI
+
+		auto resetCallback = [&]() {
+			resetLevel(testCar, AIGuids,mainScene,spawnPoints, raceSystem, acc_t, forward);
+		};
+
+		auto pauseCallback = [&](){
+			gamePaused = (gamePaused) ? false : true;
+		};
+
 		//polls all pending input events until there are none left in the queue
 		SDL_Event windowEvent;
 		while (SDL_PollEvent(&windowEvent)) {
@@ -533,12 +639,13 @@ int main(int argc, char* argv[]) {
 
 			if (windowEvent.type == SDL_CONTROLLERDEVICEADDED) {
 				std::cout << "Adding controller\n";
-				ControllerInput::init_controller();
+				ControllerInput::initControllers();
 			}
 
 			if (windowEvent.type == SDL_CONTROLLERDEVICEREMOVED) {
-				std::cout << "removing controller\n";
-				ControllerInput::deinit_controller();
+				std::cout << "a controller was unplugged!\n";
+				// ControllerInput::deinit_controller();
+				std::cout << "pause here?!?!?!?\n";
 			}
 
 			if (windowEvent.type == SDL_QUIT)
@@ -550,7 +657,8 @@ int main(int argc, char* argv[]) {
 					case SDLK_r:
 						//TODO recompile the shader
 						
-						resetLevel(testCar, AIGuids,mainScene,spawnPoints, raceSystem, acc_t, forward);
+						// resetLevel(testCar, AIGuids,mainScene,spawnPoints, raceSystem, acc_t, forward);
+						resetCallback();
 						break;
 						
 					// TODO: change the file that is serializes (Want to do base.json and enginedrive.json)
@@ -561,14 +669,16 @@ int main(int argc, char* argv[]) {
 					case SDLK_F1:
 						if (gamePaused) {
 							gamePaused = false;
+							ui.m_status = RACING_SCREEN;
 						}
 						else {
+							ui.m_status = PAUSE_SCREEN;
 							gamePaused = true;
 						}
 						break;
 					case SDLK_p:
 						if (!showImgui) {
-							showImgui = true;
+							showImgui = false;
 						}
 						else if (showImgui) {
 							showImgui = false;
@@ -605,7 +715,7 @@ int main(int argc, char* argv[]) {
 		// Iterates through all player controllers and
 		// checks if the start or select button has been pressed
 		// and launches the approriate functions 
-		for (int i = 0; i < number_players; i++)
+		for (int i = 0; i < numberPlayers; i++)
 		{
 			Car& testCar = mainScene.GetComponent<Car>(AIGuids[i]);
 
@@ -617,12 +727,13 @@ int main(int argc, char* argv[]) {
 			// repeatiedly 
 			if (start_button_current_frame[i] && !start_button_previous_frame[i]) {
 
-				if (gamePaused) { gamePaused = false; }
-				else if (!gamePaused) { gamePaused = true; }
+				if (gamePaused) { gamePaused = false; ui.m_status = RACING_SCREEN; }
+				else if (!gamePaused) { gamePaused = true; ui.m_status = PAUSE_SCREEN; }
 			}
 			
 			if (testCar.carGetControllerSelectPressed()) {
-				resetLevel(testCar, AIGuids, mainScene, spawnPoints, raceSystem, acc_t, forward);				
+				// resetLevel(testCar, AIGuids, mainScene, spawnPoints, raceSystem, acc_t, forward);		
+				resetCallback();		
 			}
 
 			// Saves the current frame data as the previous frame for the next frame go around
@@ -695,6 +806,10 @@ int main(int argc, char* argv[]) {
 		gs.Update(mainScene, time_diff);
 		raceSystem.Update(mainScene,time_diff);
 
+		// will update UI state to show results if all humans
+		// have finished the race
+		raceCompleteCallback(numberPlayers);
+
 		//update_sounds(testCar, aiCarInstance, playSounds);
         soundUpdater.Update(mainScene, time_diff);
 
@@ -739,6 +854,10 @@ int main(int argc, char* argv[]) {
 						vehicleTuning(testCar.m_Vehicle, physicsSystem);
 					if (ImGui::CollapsingHeader("Engine Tuning"))
 						engineTuning(testCar.m_Vehicle);
+
+					ProgressTracker& ptracker = mainScene.GetComponent<ProgressTracker>(carGuid);
+					ImGui::Text("checkpoint: %d", ptracker.checkpoints);
+					ImGui::Text("index: %d", ptracker.curveIndex);
 					ImGui::EndTabItem();
 				}
 				if (ImGui::BeginTabItem("Graphics")) {
@@ -768,64 +887,78 @@ int main(int argc, char* argv[]) {
 		ImGuiWindowFlags textWindowFlags =
 			ImGuiWindowFlags_NoBringToFrontOnFocus |
 			ImGuiWindowFlags_NoMove |				// text "window" should not move
-			ImGuiWindowFlags_NoResize |				// should not resize
+			// ImGuiWindowFlags_NoResize |				// should not resize
 			ImGuiWindowFlags_NoCollapse |			// should not collapse
 			ImGuiWindowFlags_NoSavedSettings |		// don't want saved settings mucking things up
-			ImGuiWindowFlags_AlwaysAutoResize |		// window should auto-resize to fit the text
-			ImGuiWindowFlags_NoBackground |			// window should be transparent; only the text should be visible
+			// ImGuiWindowFlags_AlwaysAutoResize |		// window should auto-resize to fit the text
+			// ImGuiWindowFlags_NoBackground |			// window should be transparent; only the text should be visible
 			ImGuiWindowFlags_NoDecoration |			// no decoration; only the text should be visible
 			ImGuiWindowFlags_NoTitleBar;			// no title; only the text should be visible
 		
-		//Lap counter
-		ImGui::SetNextWindowPos(ImVec2(10, 10));
-		ImGui::Begin("UI", (bool*)0, textWindowFlags);
-		ImGui::SetWindowFontScale(2.f);
-		ImGui::PushFont(CabalBold);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Lap: %d/%d", raceSystem.getLapCount(carGuid), raceSystem.MAX_LAPS);
-		ImGui::PopFont();
-		ImGui::End();
+
+		// londonfog::setStyle();
+
+
+		// //Lap counter
+		// ImGui::SetNextWindowPos(ImVec2(10, 10));
+		// ImGui::Begin("UI", (bool*)0, textWindowFlags);
+		// ImGui::SetWindowFontScale(2.f);
+		// ImGui::PushFont(CabalBold);
+		// ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Lap: %d/%d", raceSystem.getLapCount(carGuid), raceSystem.MAX_LAPS);
+		// ImGui::PopFont();
+		// ImGui::End();
 		
-		//Lap counter
-		ImGui::SetNextWindowPos(ImVec2(10, 30));
-		ImGui::Begin("UI", (bool*)0, textWindowFlags);
-		ImGui::SetWindowFontScale(2.f);
-		ImGui::PushFont(CabalBold);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Rank: %d/%d", raceSystem.getRanking(carGuid), spawnPoints.size() );
-		ImGui::PopFont();
-		ImGui::End();
+		// //Lap counter
+		// ImGui::SetNextWindowPos(ImVec2(10, 30));
+		// ImGui::Begin("UI", (bool*)0, textWindowFlags);
+		// ImGui::SetWindowFontScale(2.f);
+		// ImGui::PushFont(CabalBold);
+		// ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Rank: %d/%d", raceSystem.getRanking(carGuid), spawnPoints.size() );
+		// ImGui::PopFont();
+		// ImGui::End();
 
+		BoundingBox base = {0,0,1200,800};
 
-		//you win message
-		static int counter = 0;
-		const float delayInSeconds = 0.5;
-		static bool display = true;
-		if (raceSystem.getRaceStatus()) {
-			// the race is finished!!
-			
-			// make the AI take over after the driver has finished (UI will take precedence)
-			testCar.m_driverType = DriverType::COMPUTER;
+		ui.drawMenu(base, resetCallback, camerasCallback, pauseCallback, mainScene, raceSystem);
+		
+		
+		if (numberPlayers == 1)
+		{
+			ui.drawHUD(carGuid, mainScene,base, raceSystem);
 
-			// see if the message should be displayed
-			counter += timestep.getMilliseconds();
-			if (counter >= delayInSeconds * 1000) {
-				counter = 0;
-				display = !display;
+		} else if (numberPlayers == 2)
+		{
+
+			static BoundingBox regions[2] = {
+				{ 0,0, base.w / 2, base.h },
+				{ base.w / 2,0,base.w / 2, base.h },
+			};
+			for (int i = 0; i < numberPlayers; i++)
+			{
+				ui.drawHUD(AIGuids[i], mainScene,regions[i], raceSystem);
 			}
 
-			// check who the winner was
-			const char * winner = (raceSystem.getRanking(carGuid) == 1) ? "VICTORY!" : "AI WON!";
+			// ui.drawHUD(carGuid, mainScene,{0,0,1200,800}, raceSystem);
+			// ui.drawHUD(carGuid, mainScene,{0,0,1200,800}, raceSystem);
 
-			if (display) {
-				ImGui::SetNextWindowPos(ImVec2(200, 200));
-				ImGui::Begin("UI2", (bool*)0, textWindowFlags);
-				ImGui::SetWindowFontScale(5.f);
-				ImGui::PushFont(CabalBold);
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), winner);
-				ImGui::PopFont();
-				ImGui::End();
+		} else 
+		{
+			BoundingBox regions[4] = {
+				{ 0,0, base.w / 2, base.h / 2 },
+				{ base.w / 2,0,base.w / 2, base.h / 2},
+				{ 0,base.h / 2, base.w / 2, base.h / 2 },
+				{ base.w / 2,base.h / 2,base.w / 2, base.h / 2},
+			}; 
+
+			// draw up to number of players
+			for (int i = 0; i < numberPlayers; i++)
+			{
+				ui.drawHUD(AIGuids[i], mainScene,regions[i], raceSystem);
 			}
 
 		}
+
+		// ui.drawHUD(carGuid, mainScene,{0,0,1200,800}, raceSystem);
 
 		if (raceCountdown)
 		{
@@ -834,6 +967,8 @@ int main(int argc, char* argv[]) {
 				gamePaused = true;
 				startCountdown -= timestep.getSeconds();
 			
+		    ImGui::PushStyleColor(ImGuiCol_WindowBg,ImVec4(0.0f, 0.0f, 0.0f, 0.65f));
+
 				ImGui::SetNextWindowPos(ImVec2(200, 200));
 				ImGui::Begin("UI2", (bool*)0, textWindowFlags);
 				ImGui::SetWindowFontScale(2.5f);
@@ -841,6 +976,8 @@ int main(int argc, char* argv[]) {
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Race starting in... %.0f", startCountdown + 1);
 				ImGui::PopFont();
 				ImGui::End();
+
+				ImGui::PopStyleColor();
 			
 			}else  { 
 				raceCountdown = false;
@@ -861,7 +998,8 @@ int main(int argc, char* argv[]) {
 	// cleanupPhysics();
 	physicsSystem.Cleanup();
 
-	ControllerInput::deinit_controller();
+	ControllerInput::destroyControllers();
+
 
 	SDL_Quit();
 	return 0;
