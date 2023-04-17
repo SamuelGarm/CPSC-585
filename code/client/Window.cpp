@@ -23,6 +23,10 @@ void FAIL() {
 	exit(1);
 }
 
+void resize_callback(int width, int height) {
+	printf("Window resized to %dx%d\n", width, height);
+}
+
 Window::Window(int width, int height, const char* title)
 {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
@@ -51,7 +55,7 @@ Window::Window(int width, int height, const char* title)
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
 
-	const Uint32 window_flags = (SDL_WINDOW_OPENGL);
+	const Uint32 window_flags = (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
 	window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, window_flags);
 	if (!window)
@@ -96,14 +100,14 @@ Window::Window(int width, int height, const char* title)
 
 glm::ivec2 Window::getPos() const {
 	int x, y = 0;
-	//SDL_GetWindowPosition(window.get(), &x, &y);
+	SDL_GetWindowPosition(window, &x, &y);
 	return glm::ivec2(x, y);
 }
 
 
 glm::ivec2 Window::getSize() const {
 	int w, h = 0;
-	//SDL_GetWindowSize(window.get(), &w, &h);
+	SDL_GetWindowSize(window, &w, &h);
 	return glm::ivec2(w, h);
 }
 
@@ -115,7 +119,7 @@ void Window::RenderAndSwap()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glDisable(GL_FRAMEBUFFER_SRGB);
 	ImGui::Render();
-	glViewport(0, 0, 1200, 800);
+	glViewport(0, 0, getSize().x, getSize().y);
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glEnable(GL_FRAMEBUFFER_SRGB);
 #endif

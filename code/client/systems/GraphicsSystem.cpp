@@ -63,75 +63,42 @@ void loadCubemap(std::vector<std::string> faces)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
 
-GraphicsSystem::GraphicsSystem() :
-	modelShader("shaders/lighting_simple.vert", "shaders/lighting_simple.frag"),
-	lineShader("shaders/line.vert", "shaders/line.frag"),
-	wireframeShader("shaders/wireframe.vert", "shaders/wireframe.frag"),
-	gShader("shaders/gShader.vert", "shaders/gShader.frag"),
-	celShader("shaders/cel.vert", "shaders/cel.frag"),
-	shadowGShader("shaders/shadowMap.vert", "shaders/shadowMap.frag"),
-	VFXshader("shaders/VFX.vert", "shaders/VFX.frag"),
-	skyboxShader("shaders/skybox.vert", "shaders/skybox.frag"),
-	particleShader("shaders/particle.vert", "shaders/particle.frag"),
-	sceneShader("shaders/cel.vert", "shaders/passthrough.frag")
-{
-	std::cout << GL_MAX_TEXTURE_SIZE << '\n';
-	windowSize = glm::vec2(1200, 800);//_window.getSize();
-
-	/*
-	* create all textures
-	*/
-	// gposition texture
-	glGenTextures(1, &gPosition);
+void GraphicsSystem::initalizeTextures() {
 	glBindTexture(GL_TEXTURE_2D, gPosition);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowSize.x, windowSize.y, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	// gnormal texture
-	glGenTextures(1, &gNormal);
 	glBindTexture(GL_TEXTURE_2D, gNormal);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowSize.x, windowSize.y, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	
-	// gcolor texture
-	glGenTextures(1, &gColor);
+
 	glBindTexture(GL_TEXTURE_2D, gColor);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, windowSize.x, windowSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	
-	// gshadow texture
-	glGenTextures(1, &gShadow);
+
 	glBindTexture(GL_TEXTURE_2D, gShadow);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, windowSize.x, windowSize.y, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	
-	// gdepth texture
-	glGenTextures(1, &gDepth);
+
 	glBindTexture(GL_TEXTURE_2D, gDepth);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, windowSize.x, windowSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	// gVFXcolor texture
-	glGenTextures(1, &gVFXColor);
 	glBindTexture(GL_TEXTURE_2D, gVFXColor);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, windowSize.x, windowSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	//gVFXdepth texture
-	glGenTextures(1, &gVFXDepth);
 	glBindTexture(GL_TEXTURE_2D, gVFXDepth);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, windowSize.x, windowSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	 
-	// light depth texture
-	glGenTextures(1, &gLightDepth);
+
 	glBindTexture(GL_TEXTURE_2D, gLightDepth);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 2048, 2048, 0, GL_DEPTH_COMPONENT, GL_HALF_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -141,18 +108,14 @@ GraphicsSystem::GraphicsSystem() :
 	float borderColor[] = { 1, 1, 1, 1 };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-	//scene texture
-	glGenTextures(1, &sceneColor);
 	glBindTexture(GL_TEXTURE_2D, sceneColor);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowSize.x, windowSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	//skybox cubemap texture
-	glGenTextures(1, &skyboxCubemap);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemap);
 	glActiveTexture(GL_TEXTURE0);
-	std::vector<std::string> faces{"textures/-X.png","textures/+X.png","textures/+Y.png","textures/-Y.png","textures/-Z.png","textures/+Z.png"};
+	std::vector<std::string> faces{ "textures/-X.png","textures/+X.png","textures/+Y.png","textures/-Y.png","textures/-Z.png","textures/+Z.png" };
 	loadCubemap(faces);
 
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -163,6 +126,68 @@ GraphicsSystem::GraphicsSystem() :
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+
+GraphicsSystem::GraphicsSystem(Window& _window) :
+	modelShader("shaders/lighting_simple.vert", "shaders/lighting_simple.frag"),
+	lineShader("shaders/line.vert", "shaders/line.frag"),
+	wireframeShader("shaders/wireframe.vert", "shaders/wireframe.frag"),
+	gShader("shaders/gShader.vert", "shaders/gShader.frag"),
+	celShader("shaders/cel.vert", "shaders/cel.frag"),
+	shadowGShader("shaders/shadowMap.vert", "shaders/shadowMap.frag"),
+	VFXshader("shaders/VFX.vert", "shaders/VFX.frag"),
+	skyboxShader("shaders/skybox.vert", "shaders/skybox.frag"),
+	particleShader("shaders/particle.vert", "shaders/particle.frag"),
+	sceneShader("shaders/cel.vert", "shaders/passthrough.frag"),
+	window(&_window)
+{
+	std::cout << GL_MAX_TEXTURE_SIZE << '\n';
+	windowSize = window->getSize();
+
+	/*
+	* create all textures
+	*/
+	// gposition texture
+	glGenTextures(1, &gPosition);
+
+
+	// gnormal texture
+	glGenTextures(1, &gNormal);
+
+	
+	// gcolor texture
+	glGenTextures(1, &gColor);
+	
+
+	
+	// gshadow texture
+	glGenTextures(1, &gShadow);
+
+	
+	// gdepth texture
+	glGenTextures(1, &gDepth);
+
+
+	// gVFXcolor texture
+	glGenTextures(1, &gVFXColor);
+
+
+	//gVFXdepth texture
+	glGenTextures(1, &gVFXDepth);
+
+	 
+	// light depth texture
+	glGenTextures(1, &gLightDepth);
+
+
+	//scene texture
+	glGenTextures(1, &sceneColor);
+
+
+	//skybox cubemap texture
+	glGenTextures(1, &skyboxCubemap);
+
+	initalizeTextures();
 
 	/*
 	* create and configure g-buffer framebuffer
@@ -482,8 +507,12 @@ void GraphicsSystem::ImGuiPanel() {
 
 
 void GraphicsSystem::Update(ecs::Scene& scene, float deltaTime) {
+	if (windowSize.x != window->getSize().x || windowSize.y != window->getSize().y) {
+		windowSize = window->getSize();
+		initalizeTextures();
+	}
 	//default camera matricies
-	glm::mat4 P = glm::perspective(glm::radians(45.f), (float)windowSize.x / windowSize.y, 2.f, 1000.f);
+	glm::mat4 P = glm::perspective(glm::radians(45.f), (float)windowSize.x / windowSize.y, 2.f, 400.f);
 	if (numCamerasActive > 1)
 		cam_mode = 3;
 
@@ -589,10 +618,10 @@ void GraphicsSystem::Update(ecs::Scene& scene, float deltaTime) {
 
 	//if there are 2 cameras then the aspect ratio is a upright rectangle that takes half the screen
 	if (numCamerasActive == 1 || numCamerasActive >= 3) {
-		P = glm::perspective(glm::radians(cameras[i].FOV), (float)windowSize.x / windowSize.y, 0.3f, 1000.f);
+		P = glm::perspective(glm::radians(cameras[i].FOV), (float)windowSize.x / windowSize.y, 0.3f, 400.f);
 	}
 	else {
-		P = glm::perspective(glm::radians(cameras[i].FOV), ((float)windowSize.x / 2.f) / windowSize.y, 0.3f, 1000.f);
+		P = glm::perspective(glm::radians(cameras[i].FOV), ((float)windowSize.x / 2.f) / windowSize.y, 0.3f, 400.f);
 	}
 
 	//configure the view
@@ -854,6 +883,9 @@ void GraphicsSystem::Update(ecs::Scene& scene, float deltaTime) {
 	glm::vec3 goochCoolPass = goochCool;
 	glUniform3fv(goochCoolUniform, 1, glm::value_ptr(goochCoolPass));
 	glUniform1f(goochStrengthUniform, goochStrength);
+
+	GLuint windowSizeUniform = glGetUniformLocation(GLuint(celShader), "windowSize");
+	glUniform2fv(windowSizeUniform, 1, glm::value_ptr(windowSize));
 
 	//bind the textures
 	glActiveTexture(GL_TEXTURE0);

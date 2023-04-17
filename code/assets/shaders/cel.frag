@@ -21,13 +21,14 @@ uniform float ambiantStr;
 uniform float diffuseWeight;
 uniform int numQuantizedSplits;
 uniform vec3 cameraDirection;
+uniform vec2 windowSize;
 
 in vec2 tc;
 
 float near = 2.0; 
-float far  = 1000.0; 
-float hstep = 1.0/1200.0;
-float vstep = 1.0/800.0;
+float far  = 400.0; 
+float hstep = 1.0/windowSize.x;
+float vstep = 1.0/windowSize.y;
   
 float LinearizeDepth(float depth) 
 {

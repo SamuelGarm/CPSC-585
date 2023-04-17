@@ -18,7 +18,7 @@
 
 struct GraphicsSystem : ecs::ISystem {
 public:
-	GraphicsSystem();
+	GraphicsSystem(Window& _window);
 	~GraphicsSystem();
 	void ImGuiPanel();
 	void renderUI();
@@ -43,6 +43,7 @@ public:
 
 	
 private:
+	void initalizeTextures();
 	int cam_mode = 3; // Used to determine what mode the camera should use (free, fixed, follow)
 	Camera cameras[4];
 	glm::mat4 views[4];
@@ -50,6 +51,7 @@ private:
 	float viewportDimensions[2] = { 0,0 };
 	//uniforms
 	int numCamerasActive = 1;
+	Window* window;
 
 	glm::mat4 V = glm::mat4(1.f); // Had to declare this variable here for the rest of the program to work
 
@@ -123,7 +125,7 @@ private:
 	GLuint skybox_vertexArray;
 	GLuint skybox_vertexBuffer;
 
-	glm::ivec2 windowSize;
+	glm::vec2 windowSize;
 	static void processNode(aiNode* node, const aiScene* scene, RenderModel& _component);
 	static void processNode(aiNode* node, const aiScene* scene, CPU_Geometry& _geometry);
 };

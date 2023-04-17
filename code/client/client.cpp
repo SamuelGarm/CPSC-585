@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
 	// first and foremost, create a scene.
 	ecs::Scene mainScene;
 
-	GraphicsSystem gs = GraphicsSystem();
+	GraphicsSystem gs = GraphicsSystem(window);
 
 	physics::PhysicsSystem physicsSystem{};
 	physicsSystem.Initialize();
