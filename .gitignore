@@ -10,3 +10,8 @@ Generated\ Files/
 **/build
 **/vcpkg_installed
 **/.vscode
+
+thirdParty/physx/Debug/**
+thirdParty/physx/Release/**
+!thirdParty/physx/Debug/physx_binaries.zip
+!thirdParty/physx/Release/WindowsPrebuiltRelease.zip
