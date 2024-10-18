@@ -1,17 +1,18 @@
-# Visual Studio 2015/2017 cache/options directory
-.vs/
-# Uncomment if you have tasks that create the project's static files in wwwroot
-#wwwroot/
+# ignore everything
+*
 
-# Visual Studio 2017 auto generated files
-Generated\ Files/
+# except for the following
+!.gitignore
+!.gitmodules
+!src/**
+!thirdParty/**
+!CMakeLists.txt
 
-# custom for the project
-**/build
-**/vcpkg_installed
-**/.vscode
+# ...even if they are in subdirectories
+!*/
 
-thirdParty/physx/Debug/**
-thirdParty/physx/Release/**
-!thirdParty/physx/Debug/physx_binaries.zip
-!thirdParty/physx/Release/WindowsPrebuiltRelease.zip
+# ignore these extensions
+*.vcxproj*
+*.cmake*
+**/CMakeFiles/**
+**/messages.dir/**
