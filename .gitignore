@@ -9,10 +9,15 @@
 !CMakeLists.txt
 
 # ...even if they are in subdirectories
-
+!/*
 
 # ignore these extensions
 *.vcxproj*
 *.cmake*
 **/CMakeFiles/**
-**/messages.dir/**
+**/*.dir/**
+*.sln
+**/x64/**
+**/CMakeCache.txt
+*.lib
+*.pdb
