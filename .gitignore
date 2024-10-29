@@ -9,7 +9,7 @@
 !CMakeLists.txt
 
 # ...even if they are in subdirectories
-!*/
+
 
 # ignore these extensions
 *.vcxproj*
