@@ -21,3 +21,9 @@
 **/CMakeCache.txt
 *.lib
 *.pdb
+CMakeUserPresets.json
+**/.vs/**
+src/engine/out/**
+src/engine/thirdparty/physx/**
+!src/engine/thirdparty/physx/Release/WindowsPrebuiltRelease.zip
+!src/engine/thirdparty/physx/Debug/physx_binaries.zip
