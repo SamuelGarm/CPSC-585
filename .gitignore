@@ -7,6 +7,8 @@
 !src/**
 !thirdParty/**
 !CMakeLists.txt
+vcpkg.json
+CMakePresets.json
 
 # ...even if they are in subdirectories
 !/*

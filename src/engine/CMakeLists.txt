@@ -3,7 +3,7 @@
 # To achieve this it has its own VCPkg manager and 3rd party libraries which are ONLY meant to be accessed through
 # valid channels from client!
 
-cmake_minimum_required(VERSION 3.21...3.30)
+cmake_minimum_required(VERSION 3.21)
 
 #
 # specify the toolchain to use the vcpkg toolchain to allow for vcpkg to transparently integrate into CMake
@@ -41,6 +41,8 @@ message("Include directory is ${INCLUDE_DIR}")
 #================
 # Dependencies
 #================
+include(FetchContent)
+#----------------
 # Physx
 #----------------
 # PhysX does not have a find_package setup therefore we have to find it manually
@@ -89,19 +91,68 @@ find_library(PhysX_LIBRARY_RELEASE NAMES PhysX_64 PhysX_static_64 PATH_SUFFIXES 
 find_library(PhysX_LIBRARY_DEBUG NAMES PhysX_64 PhysX_static_64 PATH_SUFFIXES lib PATHS ${PHYSX_LIB_DEBUG_PATH} NO_DEFAULT_PATH REQUIRED)
 select_library_configurations(PhysX)
 
-target_link_libraries(engine PRIVATE 
-	${PhysXPvdSDK_LIBRARY} ${PhysXExtensions_LIBRARY} ${PhysXFoundation_LIBRARY} ${PhysXCommon_LIBRARY} ${PhysXCooking_LIBRARY} ${PhysXVehicle2_LIBRARY}  ${PhysX_LIBRARY} 
-)
-
 #copy dlls and link
 add_custom_command(TARGET engine PRE_LINK
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${PHYSX_LIB_DIR}$<CONFIGURATION>/shared/" $<TARGET_FILE_DIR:engine>/libs
 ) 
 
 #----------------
+# openGL
+#----------------
+find_package(OpenGL REQUIRED)
+
+#----------------
+# glew
+#----------------
+find_package(glew REQUIRED)
+
+#----------------
+# assimp
+#----------------
+find_package(assimp CONFIG REQUIRED)
+
+#----------------
+# imgui
+#----------------
+find_package(imgui CONFIG REQUIRED)
+
+#----------------
+# SDL2
+#----------------
+find_package(glm CONFIG REQUIRED)
+find_package(SDL2_image CONFIG REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+
+#----------------
+# vivid
+# Vivid is having an issue with glm ALIAS for some reason, so for now it is disabled
+#----------------
+#FetchContent_Declare(
+#  vivid
+#  GIT_REPOSITORY https://github.com/gurki/vivid.git
+#  GIT_TAG        0ced0226cdd32baa2921c14e8ed121c52ad17f30
+#)
+#FetchContent_MakeAvailable(vivid)
+
+#----------------
+# fmt
+#----------------
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG        cd4af11efc9c622896a3e4cb599fa28668ca3d05
+)
+FetchContent_MakeAvailable(fmt)
+
+#----------------
 # glm
 #----------------
 find_package(glm CONFIG REQUIRED)
+
+#---------------
+# fmod
+#---------------
+include_directories(SYSTEM thirdparty/fmod/inc)
 
 #==============================
 # compile the sub-systems that make up the engine
@@ -110,6 +161,17 @@ find_package(glm CONFIG REQUIRED)
 add_subdirectory("core")
 
 target_link_directories(engine PRIVATE "${BINARY_DIR}/libs")
-target_link_libraries(engine PUBLIC glm::glm)
+target_link_libraries(engine PRIVATE
+    
+  $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+  $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+  glm::glm
+  GLEW::GLEW
+  assimp::assimp
+  vivid
+  fmt
+  imgui::imgui
+  ${PhysXPvdSDK_LIBRARY} ${PhysXExtensions_LIBRARY} ${PhysXFoundation_LIBRARY} ${PhysXCommon_LIBRARY} ${PhysXCooking_LIBRARY} ${PhysXVehicle2_LIBRARY}  ${PhysX_LIBRARY}
+)
 
 

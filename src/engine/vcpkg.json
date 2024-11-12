@@ -2,6 +2,20 @@
   "name": "maxengine",
   "version-string": "0.1.0",
   "dependencies": [
-    "glm"
+    "sdl2",
+    "gtest",
+    "glm",
+    "glew",
+    "assimp",
+    "tomlplusplus",
+    "freetype",
+    "sdl2-image",
+    {
+      "name": "imgui",
+      "features": [
+        "opengl3-binding",
+        "sdl2-binding"
+      ]
+    }
   ]
 }

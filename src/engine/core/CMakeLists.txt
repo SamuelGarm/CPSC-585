@@ -1,4 +1,6 @@
 target_sources(engine
 	PRIVATE 
-		core.cpp
-)
+		"Transform.cpp"
+		"Input.cpp"
+		"ecs.cpp"
+ "../physics/MeshCollider.cpp")

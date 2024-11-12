@@ -1,4 +1,5 @@
-#include "ecs.h"
+#include "engine/ecs.hpp"
+#include "engine/int_types.hpp"
 
 namespace ecs {
     ComponentFlags componentMaskFromGuid(Guid componentGuid)
