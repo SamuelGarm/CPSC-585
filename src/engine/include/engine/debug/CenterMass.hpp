@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/ecs.h"
-#include "PxPhysicsAPI.h"
-#include "systems/components.h"
-#include "entities/car/Car.h"
+#include "engine/ecs.hpp"
+#include "engine/physx/PxPhysicsAPI.h"
+#include "engine/components/Transform.hpp"
+#include "engine/vehicle/Car.hpp"
 
 using namespace physx;
 

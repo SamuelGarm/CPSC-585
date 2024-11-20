@@ -2,7 +2,7 @@
 #pragma once
 
 #include <string>
-#include "int_types.h"
+#include "engine/int_types.hpp"
 #include <vector>
 #include <array>
 #include <unordered_map>

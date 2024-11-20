@@ -1,4 +1,4 @@
-#include "NavPath.h"
+#include "engine/NavPath.hpp"
 
     glm::vec3 NavPath::getDirectionVector(glm::vec3 currentPos){
         return checkpoints->forward(currentPos);

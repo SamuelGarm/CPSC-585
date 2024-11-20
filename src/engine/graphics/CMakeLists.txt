@@ -1,26 +1,15 @@
-target_sources(engine
+target_sources(libengine
 	PRIVATE 
-		"Camera.hpp"
 		"Camera.cpp"
 		"Components.cpp"
-		"Geometry.hpp"
 		"Geometry.cpp"
-		"GLDebug.hpp"
 		"GLDebug.cpp"
-		"GLHandles.hpp"
 		"GLHandles.cpp"
-		"IndexBuffer.hpp"
-		"IndexBuffer.cpp"
-		"Shader.hpp"
 		"Shader.cpp"
-		"ShaderProgram.hpp"
 		"ShaderProgram.cpp"
 		"System.cpp"
-		"Texture.hpp"
 		"Texture.cpp"
-		"VertexArray.hpp"
 		"VertexArray.cpp"
-		"VertexBuffer.hpp"
 		"VertexBuffer.cpp"
 		"Window.cpp"
 )

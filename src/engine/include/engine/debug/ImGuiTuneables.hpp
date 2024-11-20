@@ -1,10 +1,10 @@
 #pragma once
+#include "engine/vehicle/Car.hpp"
+#include "engine/systems/PhysicsSystem.hpp"
+
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
-#include "entities/car/Car.h"
-#include "systems/PhysicsSystem.h"
-
 #include <glm/glm.hpp>
 
 using namespace physx;

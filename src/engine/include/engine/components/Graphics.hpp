@@ -1,6 +1,6 @@
 #pragma once
-#include "graphics/Geometry.h"
-#include "graphics/Texture.h"
+#include "engine/graphics/Geometry.hpp"
+#include "engine/graphics/Texture.hpp"
 
 struct Mesh {
 	friend class GraphicsSystem;

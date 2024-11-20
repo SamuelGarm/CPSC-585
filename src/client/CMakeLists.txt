@@ -22,7 +22,9 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${FullOutputDir}")
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${FullOutputDir}") #Where executable files output
 
 set(SOURCE_FILES 
-	main.cpp)
+	client.cpp
+	Obstacles.cpp
+)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
@@ -30,4 +32,4 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE "../engine/include")
 
 
-target_link_libraries(${PROJECT_NAME} PRIVATE "../engine/build/Windows64/static libs/Debug/TempEngine")
+target_link_libraries(${PROJECT_NAME} PRIVATE "..engine/out/build/Windows release config/engine")

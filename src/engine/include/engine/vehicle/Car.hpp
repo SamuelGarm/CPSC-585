@@ -1,16 +1,13 @@
 #pragma once
-
-#include "PxPhysicsAPI.h"
-#include "vehicle2/PxVehicleAPI.h"
+#include "engine/ecs.hpp"
+#include "engine/systems/PhysicsSystem.hpp"
+#include "engine/geometry/Curve.hpp"
+#include "engine/NavPath.hpp"
+#include "engine/physx/PxPhysicsAPI.h"
+#include "engine/physx/vehicle2/PxVehicleAPI.h"
 
 #include <glm/glm.hpp>
 #include <vector>
-
-#include "../../systems/PhysicsSystem.h"
-#include "../../curve/Curve.h"
-#include "nav/NavPath.h"
-
-#include "core/ecs.h"
 
 using namespace physx;
 using namespace physx::vehicle2;

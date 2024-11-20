@@ -1,7 +1,7 @@
-#include "PxPhysicsAPI.h"
-#include "PhysicsSystem.h"
-#include "../utils/Time.h"
-#include "../entities/car/Car.h"
+#include "engine/physx/PxPhysicsAPI.h"
+#include "engine/systems/PhysicsSystem.hpp"
+#include "engine/Time.hpp"
+#include "engine/vehicle/Car.hpp"
 
 #include <iostream>
 

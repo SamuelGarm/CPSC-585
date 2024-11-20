@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core/ecs.h"
-#include "../../systems/components.h"
-#include "Car.h"
+#include "engine/ecs.hpp"
+#include "engine/vehicle/Car.hpp"
 
 void setupCarVFX(ecs::Scene& mainScene, Guid _ID);
 void updateCarVFX(ecs::Scene mainScene, float _dt);

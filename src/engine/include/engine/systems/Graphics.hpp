@@ -1,13 +1,16 @@
 #pragma once
-#include "graphics/Geometry.h"
-#include "graphics/Texture.h"
-#include "graphics/ShaderProgram.h"
-#include "graphics/Camera.h
+#include "engine/graphics/Geometry.hpp"
+#include "engine/graphics/Texture.hpp"
+#include "engine/graphics/ShaderProgram.hpp"
+#include "engine/graphics/Camera.hpp"
+#include "engine/components/Graphics.hpp"
+#include <assimp/scene.h>
 #include <GL/glew.h>"
 #include <array>
 #include <string>
 #include "engine/ecs.hpp"
 #include "glm/glm.hpp"
+#include "engine/Input.hpp"
 
 struct GraphicsSystem : ecs::ISystem {
 public:

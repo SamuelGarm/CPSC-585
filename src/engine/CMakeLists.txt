@@ -3,8 +3,7 @@
 # To achieve this it has its own VCPkg manager and 3rd party libraries which are ONLY meant to be accessed through
 # valid channels from client!
 
-cmake_minimum_required(VERSION 3.21)
-
+cmake_minimum_required(VERSION 3.27)
 #
 # specify the toolchain to use the vcpkg toolchain to allow for vcpkg to transparently integrate into CMake
 #
@@ -13,12 +12,13 @@ cmake_minimum_required(VERSION 3.21)
 set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "VCPKG Target Triplet to use")
 
 project(MaxEngine VERSION 0.1.0 LANGUAGES C CXX)
-add_library(engine)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_library(libengine)
 
 #
 #Build the project to a specific output location based on OS target and build type
@@ -35,8 +35,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # make the include directory visible to modules in the engine
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
-target_include_directories(engine PUBLIC ${INCLUDE_DIR})
 message("Include directory is ${INCLUDE_DIR}")
+target_include_directories(libengine PUBLIC ${INCLUDE_DIR})
 
 #================
 # Dependencies
@@ -92,8 +92,8 @@ find_library(PhysX_LIBRARY_DEBUG NAMES PhysX_64 PhysX_static_64 PATH_SUFFIXES li
 select_library_configurations(PhysX)
 
 #copy dlls and link
-add_custom_command(TARGET engine PRE_LINK
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PHYSX_LIB_DIR}$<CONFIGURATION>/shared/" $<TARGET_FILE_DIR:engine>/libs
+add_custom_command(TARGET libengine PRE_LINK
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PHYSX_LIB_DIR}$<CONFIGURATION>/shared/" $<TARGET_FILE_DIR:libengine>/libs
 ) 
 
 #----------------
@@ -152,26 +152,78 @@ find_package(glm CONFIG REQUIRED)
 #---------------
 # fmod
 #---------------
-include_directories(SYSTEM thirdparty/fmod/inc)
+include_directories(thirdparty/fmod/inc)
 
 #==============================
 # compile the sub-systems that make up the engine
 #==============================
-#add_subdirectory("messages")
 add_subdirectory("core")
+add_subdirectory("debug")
+add_subdirectory("geometry")
+add_subdirectory("pathfinding")
+add_subdirectory("physics")
+add_subdirectory("race")
+add_subdirectory("sound")
+add_subdirectory("vehicle")
 
-target_link_directories(engine PRIVATE "${BINARY_DIR}/libs")
-target_link_libraries(engine PRIVATE
-    
-  $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
-  $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-  glm::glm
-  GLEW::GLEW
-  assimp::assimp
-  vivid
-  fmt
-  imgui::imgui
-  ${PhysXPvdSDK_LIBRARY} ${PhysXExtensions_LIBRARY} ${PhysXFoundation_LIBRARY} ${PhysXCommon_LIBRARY} ${PhysXCooking_LIBRARY} ${PhysXVehicle2_LIBRARY}  ${PhysX_LIBRARY}
+#get_cmake_property(_variableNames VARIABLES)
+#list (SORT _variableNames)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
+
+#copy headers for access by 3rd partys
+#find_path(IMGUI_INCLUDE_DIR NAMES imgui.h)
+#add_custom_command(TARGET engine PRE_LINK
+#    COMMAND ${CMAKE_COMMAND} -E copy_directory "${IMGUI_INCLUDE_DIR}" $<TARGET_FILE_DIR:engine>/libs
+#) 
+
+#using GLOB_RECURSE means that changes to header files may not be captured automatically so it may require a manual cache delete and configure when modifying header files
+file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "include/*.hpp")
+#message(${HEADER_FILES})
+target_sources(libengine
+    PUBLIC
+        FILE_SET api 
+        TYPE HEADERS 
+        BASE_DIRS include 
+        FILES 
+            ${HEADER_FILES}
 )
 
+include_directories("include/engine/physx")
+include_directories("physx")
+target_link_directories(libengine PRIVATE "${BINARY_DIR}/libs")
+target_link_libraries(libengine
+    PRIVATE
+        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+        GLEW::GLEW
+        assimp::assimp
+        vivid
+        fmt
+        ${PhysXPvdSDK_LIBRARY} ${PhysXExtensions_LIBRARY} ${PhysXFoundation_LIBRARY} ${PhysXCommon_LIBRARY} ${PhysXCooking_LIBRARY} ${PhysXVehicle2_LIBRARY}  ${PhysX_LIBRARY}
+    PUBLIC
+        glm::glm
+        imgui::imgui
+)
 
+install(
+    TARGETS libengine 
+    EXPORT libengine
+    FILE_SET api
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+)
+
+#install(
+#    DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
+#    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#)
+
+set(CPACK_PACKAGE_NAME MaxEngine)
+set(CPACK_PACKAGE_VENDOR "No Sleep Games")
+
+set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
+set(CPACK_VERBATIM_VARIBALES TRUE)
+
+include (CPack)

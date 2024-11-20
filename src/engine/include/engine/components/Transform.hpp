@@ -1,9 +1,7 @@
 #pragma once
-#include "physx/PxPhysicsAPI.h"
-//#include "graphics/Geometry.h"
-//#include "graphics/Texture.h"
+#include "engine/physx/PxPhysicsAPI.h"
 
-#include "engine/PxConversionUtils.h"
+#include "engine/PxConversionUtils.hpp"
 #include <glm/gtc/random.hpp>
 
 /*

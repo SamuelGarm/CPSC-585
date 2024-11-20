@@ -6,9 +6,9 @@
 // similar classes with the needed functionality
 //------------------------------------------------------------------------------
 
-#include "VertexArray.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
+#include "engine/graphics/VertexArray.hpp"
+#include "engine/graphics/VertexBuffer.hpp"
+#include "engine/graphics/IndexBuffer.hpp"
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>

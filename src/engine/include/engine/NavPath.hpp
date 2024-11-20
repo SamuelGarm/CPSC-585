@@ -1,6 +1,6 @@
 #pragma once
 #include "glm/glm.hpp"
-#include "../../../curve/Curve.h"
+#include "engine/geometry/Curve.hpp"
 
 struct CheckPoint {
     CheckPoint(int index, glm::vec3 pos) : index(index), position(pos) {}

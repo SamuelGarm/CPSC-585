@@ -1,5 +1,5 @@
-#include "RaceSystem.h"
-#include "../entities/car/Car.h"
+#include "engine/systems/RaceSystem.hpp"
+#include "engine/vehicle/Car.hpp"
 #include <algorithm>
 #include <iostream> 
 

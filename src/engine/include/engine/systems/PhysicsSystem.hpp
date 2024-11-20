@@ -1,13 +1,13 @@
 #pragma once
 
-#include "core/ecs.h"
-#include "../utils/Time.h"
+#include "engine/ecs.hpp"
+#include "engine/Time.hpp"
 
-#include "PxPhysicsAPI.h"
-#include "../physx/snippetcommon/SnippetPVD.h"
+#include "engine/physx/PxPhysicsAPI.h"
+#include "snippetcommon/SnippetPVD.h"
 
 // VEHICLES
-#include "vehicle2/PxVehicleAPI.h"
+#include "engine/physx/vehicle2/PxVehicleAPI.h"
 #include "../physx/snippetvehicle2common/enginedrivetrain/EngineDrivetrain.h"
 #include "../physx/snippetvehicle2common/serialization/BaseSerialization.h"
 #include "../physx/snippetvehicle2common/serialization/EngineDrivetrainSerialization.h"

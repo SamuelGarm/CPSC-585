@@ -1,14 +1,15 @@
-#include "SoundSystem.h"
+#include "engine/systems/SoundSystem.hpp"
 
 #include "fmod.hpp"
 #include "fmod_errors.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtx/quaternion.hpp"
 
-#include "../Input.h"
+#include "engine/Input.hpp"
 
-#include "core/ecs.h"
+#include "engine/ecs.hpp"
 
 #include <cstdio>
 #include <cstdlib>

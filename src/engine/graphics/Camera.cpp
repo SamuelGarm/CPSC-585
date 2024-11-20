@@ -7,6 +7,7 @@
 #include "engine/ecs.hpp"
 #include "engine/components/Transform.hpp"
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtc/quaternion.hpp"
 #include <glm/gtx/quaternion.hpp>
 

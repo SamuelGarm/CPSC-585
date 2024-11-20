@@ -1,4 +1,4 @@
-target_sources(engine
+target_sources(libengine
 	PRIVATE 
 		"Curve.cpp"
 )

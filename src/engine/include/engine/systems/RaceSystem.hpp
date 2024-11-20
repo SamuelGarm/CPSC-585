@@ -1,10 +1,10 @@
 #pragma once
+#include "engine/ecs.hpp"
+#include "engine/vehicle/Car.hpp"
+#include "engine/geometry/Curve.hpp"
 
 #include "glm/glm.hpp"
-#include "core/ecs.h"
-#include "../entities/car/Car.h"
 #include <map>
-#include "../curve/Curve.h"
 
 struct Contestant {
   Car* car;

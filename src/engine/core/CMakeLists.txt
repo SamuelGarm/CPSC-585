@@ -1,6 +1,6 @@
-target_sources(engine
+target_sources(libengine
 	PRIVATE 
 		"Transform.cpp"
 		"Input.cpp"
 		"ecs.cpp"
- "../physics/MeshCollider.cpp")
+)

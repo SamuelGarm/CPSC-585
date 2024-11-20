@@ -1,5 +1,7 @@
 #include "engine/vehicle/TireTracks.hpp"
 #include "engine/vehicle/Car.hpp"
+#include "engine/components/Graphics.hpp"
+#include "engine/components/Transform.hpp"
 
 #include <iostream>
 #include "imgui.h"
