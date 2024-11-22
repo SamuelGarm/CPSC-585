@@ -1,4 +1,4 @@
-#include "MeshCollider.hpp"
+#include "engine/components/MeshCollider.hpp"
 #include "engine/PxConversionUtils.hpp"
 #include "engine/physx/PxPhysicsAPI.h"
 #include "engine/systems/Graphics.hpp"

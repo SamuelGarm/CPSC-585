@@ -1,7 +1,7 @@
 #pragma once
 // TODO(beau): turn this file into our general time handling system
 #include <cassert>
-#include "utils/Time.h"
+#include "engine/Time.hpp"
 
 struct FramerateCounter {
 	static const int m_capacity = 60;

@@ -1,8 +1,7 @@
 #pragma once
-#include "core/ecs.h"
-#include "../../systems/GraphicsSystem.h"
-#include "../../systems/components.h"
-#include "../../systems/PhysicsSystem.h"
+#include "engine/ecs.hpp"
+#include "engine/systems/Graphics.hpp"
+#include "engine/systems/PhysicsSystem.hpp"
 
 using namespace physx;
 

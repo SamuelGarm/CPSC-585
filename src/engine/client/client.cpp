@@ -6,42 +6,42 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 
-#include "engine/systems/Graphics.hpp
-#include "systems/graphics/Geometry.h"
+#include "engine/systems/Graphics.hpp"
+#include "engine/geometry/Curve.hpp"
 #include "PxPhysicsAPI.h"
 
-#include "Window.h"
+#include "engine/Window.hpp"
 
 #include <unordered_map>
 
-#include "core/ecs.h"
-#include "systems/GraphicsSystem.h"
-#include "systems/components.h"
+#include "engine/ecs.hpp"
+#include "engine/components/Graphics.hpp"
+#include "engine/components/Transform.hpp"
 
-#include "FrameCounter.h"
+#include "engine/debug/FrameCounter.hpp"
 
-#include "ImGuiTuneables.h"
+#include "engine/debug/ImGuiTuneables.hpp"
 
-#include "utils/Time.h"
-#include "Input.h"
-#include "utils/PxConversionUtils.h"
+#include "engine/Time.hpp"
+#include "engine/Input.hpp"
+#include "engine/PxConversionUtils.hpp"
 #include "glm/gtx/string_cast.hpp"
 
-#include "CenterMass.h"
-#include "systems/PhysicsSystem.h"
+#include "engine/debug/CenterMass.hpp"
+#include "engine/systems/PhysicsSystem.hpp"
 
-#include "entities/car/Car.h"
-#include "entities/car/CarUtils.h"
+#include "engine/vehicle/Car.hpp"
+#include "engine/vehicle/CarUtils.hpp"
 
-#include "entities/car/TireTracks.h"
-#include "TetherGraphics.h"
-#include "entities/physics/Obstacles.h"
+#include "engine/vehicle/TireTracks.hpp"
 
-#include "entities/physics/LevelCollider.h"
+#include "Obstacles.hpp"
 
-#include "systems/SoundSystem.h"
+#include "engine/components/LevelCollider.hpp"
 
-#include "systems/RaceSystem.h"
+#include "engine/systems/SoundSystem.hpp"
+
+#include "engine/systems/RaceSystem.hpp"
 
 #include <chrono>  // chrono::system_clock
 #include <ctime>   // localtime

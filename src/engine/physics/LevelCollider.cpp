@@ -1,4 +1,4 @@
-#include "LevelCollider.hpp"
+#include "engine/components/LevelCollider.hpp"
 
 
 // TODO: add a type enum to the collider instead of using subclasses.

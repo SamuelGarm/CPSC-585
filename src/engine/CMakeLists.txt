@@ -18,7 +18,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_library(libengine)
+add_executable(libengine)
+
+#set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 #
 #Build the project to a specific output location based on OS target and build type
@@ -185,27 +187,61 @@ target_sources(libengine
     PUBLIC
         FILE_SET api 
         TYPE HEADERS 
-        BASE_DIRS include 
+        BASE_DIRS include
         FILES 
             ${HEADER_FILES}
 )
 
+if(CMAKE_BUILD_TYPE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message("Building snippet in debug configuration")
+    add_compile_definitions(_DEBUG)
+    link_directories("PhysX/bin/linux.clang/debug") # This is the path where PhysX libraries are installed
+else()
+    message("Building snippet in release configuration with PhysX ${PHYSX_BUILD_TYPE} configuration")
+    add_compile_definitions(NDEBUG)
+    link_directories("PhysX/bin/linux.clang/${PHYSX_BUILD_TYPE}") # This is the path where PhysX libraries are installed
+endif()
+
+set(PHYSX_BUILD_TYPE "debug")
+
+target_sources(libengine
+    PRIVATE
+        "client/client.cpp"
+        "client/Obstacles.cpp"
+        "client/Obstacles.hpp"
+)
+
+target_compile_options (libengine
+PRIVATE
+        $<$<CONFIG:>:/MT> #---------|
+        $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+        $<$<CONFIG:Release>:/MT> #--|
+    )
+
 include_directories("include/engine/physx")
 include_directories("physx")
 target_link_directories(libengine PRIVATE "${BINARY_DIR}/libs")
+
 target_link_libraries(libengine
     PRIVATE
         $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
         GLEW::GLEW
         assimp::assimp
-        vivid
+        #vivid
         fmt
-        ${PhysXPvdSDK_LIBRARY} ${PhysXExtensions_LIBRARY} ${PhysXFoundation_LIBRARY} ${PhysXCommon_LIBRARY} ${PhysXCooking_LIBRARY} ${PhysXVehicle2_LIBRARY}  ${PhysX_LIBRARY}
+        
     PUBLIC
         glm::glm
         imgui::imgui
 )
+
+target_link_libraries(libengine
+    PRIVATE
+        ${PhysXPvdSDK_LIBRARY} ${PhysXExtensions_LIBRARY} ${PhysXFoundation_LIBRARY} ${PhysXCommon_LIBRARY} ${PhysXCooking_LIBRARY} ${PhysXVehicle2_LIBRARY}  ${PhysX_LIBRARY}
+)
+
+
 
 install(
     TARGETS libengine 
