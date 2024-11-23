@@ -162,6 +162,7 @@ include_directories(thirdparty/fmod/inc)
 add_subdirectory("core")
 add_subdirectory("debug")
 add_subdirectory("geometry")
+add_subdirectory("graphics")
 add_subdirectory("pathfinding")
 add_subdirectory("physics")
 add_subdirectory("race")
@@ -182,7 +183,7 @@ add_subdirectory("vehicle")
 
 #using GLOB_RECURSE means that changes to header files may not be captured automatically so it may require a manual cache delete and configure when modifying header files
 file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "include/*.hpp")
-#message(${HEADER_FILES})
+#message(${PHYSX_SOURCE_FILES})
 target_sources(libengine
     PUBLIC
         FILE_SET api 
@@ -190,6 +191,14 @@ target_sources(libengine
         BASE_DIRS include
         FILES 
             ${HEADER_FILES}
+)
+
+file(GLOB_RECURSE PHYSX_HEADER_FILES CONFIGURE_DEPENDS "physx/*.h")
+file(GLOB_RECURSE PHYSX_SOURCE_FILES CONFIGURE_DEPENDS "physx/*.cpp")
+target_sources (libengine
+    PUBLIC
+                ${PHYSX_HEADER_FILES}
+            ${PHYSX_SOURCE_FILES}
 )
 
 if(CMAKE_BUILD_TYPE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -205,7 +214,7 @@ endif()
 set(PHYSX_BUILD_TYPE "debug")
 
 target_sources(libengine
-    PRIVATE
+    PUBLIC
         "client/client.cpp"
         "client/Obstacles.cpp"
         "client/Obstacles.hpp"
@@ -221,26 +230,32 @@ PRIVATE
 include_directories("include/engine/physx")
 include_directories("physx")
 target_link_directories(libengine PRIVATE "${BINARY_DIR}/libs")
+message(STATUS ${CMAKE_CURRENT_BINARY_DIR})
+
+set(FMOD_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fmod/lib/)
+message(${FMOD_LIB_PATH})
+find_library(FMOD_LIB fmod_vc PATH_SUFFIXES lib PATHS ${FMOD_LIB_PATH} REQUIRED)
+find_library(FMODL_LIB fmodL_vc PATH_SUFFIXES lib PATHS ${FMOD_LIB_PATH} REQUIRED)
 
 target_link_libraries(libengine
-    PRIVATE
+    PUBLIC
         $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
         GLEW::GLEW
         assimp::assimp
         #vivid
         fmt
-        
+        ${FMOD_LIB}
+    ${FMODL_LIB}
     PUBLIC
         glm::glm
         imgui::imgui
 )
 
 target_link_libraries(libengine
-    PRIVATE
+    PUBLIC
         ${PhysXPvdSDK_LIBRARY} ${PhysXExtensions_LIBRARY} ${PhysXFoundation_LIBRARY} ${PhysXCommon_LIBRARY} ${PhysXCooking_LIBRARY} ${PhysXVehicle2_LIBRARY}  ${PhysX_LIBRARY}
 )
-
 
 
 install(

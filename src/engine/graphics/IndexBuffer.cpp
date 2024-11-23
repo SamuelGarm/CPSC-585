@@ -1,4 +1,4 @@
-#include "IndexBuffer.hpp"
+#include "engine/graphics/IndexBuffer.hpp"
 
 #include <utility>
 

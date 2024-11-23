@@ -1,4 +1,4 @@
-#include "GLHandles.hpp"
+#include "engine/graphics/GLHandles.hpp"
 
 #include <algorithm> // For std::swap
 

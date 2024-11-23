@@ -1,4 +1,4 @@
-#include "VertexBuffer.hpp"
+#include "engine/graphics/VertexBuffer.hpp"
 
 #include <utility>
 

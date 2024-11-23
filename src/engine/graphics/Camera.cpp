@@ -1,5 +1,5 @@
-#include "System.hpp"
-#include "Camera.hpp"
+#include "engine/systems/Graphics.hpp"
+#include "engine/graphics/Camera.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>

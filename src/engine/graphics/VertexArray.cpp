@@ -1,4 +1,4 @@
-#include "VertexArray.hpp"
+#include "engine/graphics/VertexArray.hpp"
 
 #include <utility>
 

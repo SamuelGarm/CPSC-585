@@ -1,14 +1,14 @@
 #include "engine/systems/graphics.hpp"
 #include "engine/ecs.hpp"
 #include "engine/vehicle/Car.hpp"
-#include "Texture.hpp"
+#include "engine/graphics/Texture.hpp"
 
 #include <GL/glew.h>
 #include <iostream>
-#include "graphics/GLDebug.h"
-#include "graphics/ShaderProgram.h"
+#include "engine/graphics/GLDebug.hpp"
+#include "engine/graphics/ShaderProgram.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include "graphics/Camera.h"
+#include "engine/graphics/Camera.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtc/quaternion.hpp"
 #include <glm/gtx/quaternion.hpp>
@@ -928,7 +928,7 @@ void GraphicsSystem::Update(ecs::Scene& scene, float deltaTime) {
 				using namespace physx;
 				std::vector<PxRigidActor*> actors(nbActors);
 				physxScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, reinterpret_cast<PxActor**>(&actors[0]), nbActors);
-				Snippets::renderActors(&actors[0], static_cast<PxU32>(actors.size()), modelUniform);
+				//Snippets::renderActors(&actors[0], static_cast<PxU32>(actors.size()), modelUniform);
 			}
 		}
 	}

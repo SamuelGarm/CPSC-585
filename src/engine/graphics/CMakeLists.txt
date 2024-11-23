@@ -12,4 +12,5 @@ target_sources(libengine
 		"VertexArray.cpp"
 		"VertexBuffer.cpp"
 		"Window.cpp"
+		"IndexBuffer.cpp"
 )

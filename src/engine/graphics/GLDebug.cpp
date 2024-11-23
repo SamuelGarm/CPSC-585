@@ -1,4 +1,4 @@
-#include "GLDebug.hpp"
+#include "engine/graphics/GLDebug.hpp"
 
 #include <regex>
 
