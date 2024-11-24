@@ -10,6 +10,7 @@
 
 #include "engine/ecs.hpp"
 #include "engine/components/Transform.hpp"
+#include "engine/physx/PxPhysicsAPI.h"
 
 class Camera {
 public:
@@ -23,7 +24,7 @@ public:
 	Guid targetEntity = 0;
 private:
 	friend class GraphicsSystem;
-	glm::vec3 cameraPos = glm::vec3(35.0f, 6.0f, -15.0f);
+	glm::vec3 cameraPos = glm::vec3(0);
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 cameraDirection = glm::vec3(0.0f, 0.0f, -1.0f); //DO not set, it is overwritten on construction!
 	float fspeed = 0, hspeed = 0, panHorizontal = 90.0f, panVertical = -10.0f, lastX = 0, lastY = 0;
