@@ -99,9 +99,6 @@ struct Car {
     void cleanupVehicle();
     void baseSetup();
     void setup1();
-    void setup2();
-
-    float carSpeed();
 
     bool carGetControllerStartPressed();
     bool carGetControllerSelectPressed();

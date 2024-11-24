@@ -72,13 +72,6 @@ public:
 		scale = _scale;
 	}
 
-	void attachActor(physx::PxRigidActor* _actor) {
-		actor = _actor;
-	}
-	void detatchActor() {
-		actor = nullptr;
-	}
-
 	glm::mat4 getTransformationMatrix()
 	{
 		return glm::translate(glm::mat4(1), getTranslation()) * toMat4(getRotation()) * glm::scale(glm::mat4(1), getScale());
