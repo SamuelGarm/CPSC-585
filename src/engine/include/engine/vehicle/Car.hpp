@@ -139,7 +139,8 @@ private:
 
     float STRENGTH_UP_CORRECTION{300.f};
     float m_stuckTimer;
-
+    float updateTimer = 0;
+    Command lastCommand = Command({ 1,0,0,0 });
 
 };
 

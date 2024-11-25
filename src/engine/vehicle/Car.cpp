@@ -460,7 +460,15 @@ Command Car::drive(ecs::Scene& scene, float deltaTime)
 
     if (m_driverType == DriverType::COMPUTER)
     {
-        return pathfind(scene,deltaTime);
+      updateTimer += deltaTime;
+      if (updateTimer >= 0.2) {
+        updateTimer = 0;
+        lastCommand = pathfind(scene, deltaTime);
+        return lastCommand;
+      }
+      else {
+        return lastCommand;
+      }
     }
     else if (m_driverType == DriverType::HUMAN)
     {

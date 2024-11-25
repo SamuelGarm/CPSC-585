@@ -72,28 +72,31 @@ physx::PxTriangleMesh* MeshCollider::cookLevel(glm::mat4 transform)
 
   PxTolerancesScale scale;
   PxCookingParams params(scale);
-  params.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
-  params.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+  //params.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
+  //params.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE;
+  params.midphaseDesc.mBVH34Desc.numPrimsPerLeaf = 2;
 
+  PxTriangleMesh* aTriangleMesh = PxCreateTriangleMesh(params, groundDesc, gPhysics->getPhysicsInsertionCallback());
+  return aTriangleMesh;
 
-  bool status = PxCookTriangleMesh(params, groundDesc, writeBuffer, &result);
-#ifdef DEBUG
-  bool res = PxValidateTriangleMesh(params, groundDesc);
-  assert(res);
-#endif // DEBUG
-
- // bool status = gCooking->cookTriangleMesh(groundDesc, writeBuffer, &result);
-
-  if (result != physx::PxTriangleMeshCookingResult::Enum::eSUCCESS)
-  {
-    if (result == physx::PxTriangleMeshCookingResult::eLARGE_TRIANGLE)
-      std::cerr << "Mesh cooking failed because of a large triangle\n";
-    else
-      std::cerr << "Mesh cooking failed for an unknowen reason...  who let physx cook?" << std::endl;
-  }
-  physx::PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-
-  return gPhysics->createTriangleMesh(readBuffer);
+//  bool status = PxCookTriangleMesh(params, groundDesc, writeBuffer, &result);
+//#ifdef DEBUG
+//  bool res = PxValidateTriangleMesh(params, groundDesc);
+//  assert(res);
+//#endif // DEBUG
+//
+// // bool status = gCooking->cookTriangleMesh(groundDesc, writeBuffer, &result);
+//
+//  if (result != physx::PxTriangleMeshCookingResult::Enum::eSUCCESS || !status)
+//  {
+//    if (result == physx::PxTriangleMeshCookingResult::eLARGE_TRIANGLE)
+//      std::cerr << "Mesh cooking failed because of a large triangle\n";
+//    else
+//      std::cerr << "Mesh cooking failed for an unknowen reason...  who let physx cook?" << std::endl;
+//  }
+//  physx::PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
+//
+//  return gPhysics->createTriangleMesh(readBuffer);
 }
 
 void MeshCollider::initLevelRigidBody(physx::PxTriangleMesh* levelMesh)
