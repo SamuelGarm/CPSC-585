@@ -95,7 +95,7 @@ select_library_configurations(PhysX)
 
 #copy dlls and link
 add_custom_command(TARGET libengine PRE_LINK
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PHYSX_LIB_DIR}$<CONFIGURATION>/shared/" $<TARGET_FILE_DIR:libengine>/libs
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${PHYSX_LIB_DIR}$<CONFIGURATION>/shared/" $<TARGET_FILE_DIR:libengine>
 ) 
 
 #----------------
@@ -155,6 +155,11 @@ find_package(glm CONFIG REQUIRED)
 # fmod
 #---------------
 include_directories(thirdparty/fmod/inc)
+#copy dlls and link
+add_custom_command(TARGET libengine PRE_LINK
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/thirdparty/fmod/lib/shared/" $<TARGET_FILE_DIR:libengine>
+) 
+
 
 #==============================
 # compile the sub-systems that make up the engine
@@ -254,9 +259,14 @@ target_link_libraries(libengine
 
 target_link_libraries(libengine
     PUBLIC
-        ${PhysXPvdSDK_LIBRARY} ${PhysXExtensions_LIBRARY} ${PhysXFoundation_LIBRARY} ${PhysXCommon_LIBRARY} ${PhysXCooking_LIBRARY} ${PhysXVehicle2_LIBRARY}  ${PhysX_LIBRARY}
+        ${PhysXPvdSDK_LIBRARY} ${PhysXExtensions_LIBRARY} ${PhysXFoundation_LIBRARY} ${PhysXCommon_LIBRARY} ${PhysXCooking_LIBRARY} ${PhysXVehicle2_LIBRARY}  ${PhysX_LIBRARY} ${FMOD_LIB}
 )
 
+add_custom_command(TARGET libengine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/client/assets/"
+        $<TARGET_FILE_DIR:libengine>
+)
 
 install(
     TARGETS libengine 
