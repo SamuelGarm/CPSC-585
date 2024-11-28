@@ -60,6 +60,7 @@ include(SelectLibraryConfigurations)
 set(PHYSX_LIB_RELEASE_PATH "${CMAKE_SOURCE_DIR}/thirdparty/physx/Release/")
 set(PHYSX_LIB_DEBUG_PATH "${CMAKE_SOURCE_DIR}/thirdparty/physx/Debug/")
 set(PHYSX_LIB_DIR "${CMAKE_SOURCE_DIR}/thirdparty/physx/")
+set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/thirdparty/")
 
 message( "PHYSX_LIB_DIR : ${PHYSX_LIB_DIR}" )
 message( "PHYSX_LIB_PATH : ${PHYSX_LIB_RELEASE_PATH}" )
@@ -275,18 +276,40 @@ add_custom_command(TARGET libengine POST_BUILD
         $<TARGET_FILE_DIR:libengine>
 )
 
-install(
-    TARGETS libengine 
-    EXPORT libengine
-    FILE_SET api
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
-)
+#install(
+#    TARGETS libengine 
+#    EXPORT libengine
+#    FILE_SET api
+#    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+#    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+#)
 
 #install(
 #    DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
 #    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 #)
+install(
+    TARGETS libengine
+    RUNTIME DESTINATION "."
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} 
+    LIBRARY DESTINATION "."
+)
+
+install(DIRECTORY "${PHYSX_LIB_DIR}$<CONFIGURATION>/shared/" 
+        DESTINATION "."
+)
+install(FILES "${THIRD_PARTY_DIR}fmod/lib/shared/fmod.dll" 
+        DESTINATION "."
+)
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/client/assets/audio DESTINATION ".")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/client/assets/audio DESTINATION ".")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/client/assets/configs DESTINATION ".")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/client/assets/fonts DESTINATION ".")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/client/assets/models DESTINATION ".")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/client/assets/shaders DESTINATION ".")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/client/assets/textures DESTINATION ".")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/client/assets/vehicledata DESTINATION ".")
 
 set(CPACK_PACKAGE_NAME MaxEngine)
 set(CPACK_PACKAGE_VENDOR "No Sleep Games")
