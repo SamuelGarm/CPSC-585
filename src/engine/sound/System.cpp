@@ -56,7 +56,8 @@ struct SoundSystem {
 
     // car sounds
 	FMOD::Sound* beepsound = NULL;
-	FMOD::Sound* enginesound = NULL;
+  FMOD::Sound* drivesound = NULL;
+  FMOD::Sound* idlesound = NULL;
 	FMOD::Sound* brakesound = NULL;
 	FMOD::Sound* collisionsound = NULL;
 } soundsystem;
@@ -79,18 +80,21 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
     for (auto id : ecs::EntitiesInScene<Car>(scene))
     {
         
-        auto & car = scene.GetComponent<Car>(id);
+        auto& car = scene.GetComponent<Car>(id);
         
         if (car.m_driverType == DriverType::COMPUTER)
         {
             auto & channel = scene.GetComponent<CarSoundEmitter>(id);
 
             auto & engine = channel.enginechannel;
+            auto& idle = channel.idlechannel;
             auto & brake = channel.brakechannel;
             // auto & collision = channel.collisionchannel;
             engine->setVolumeRamp(false);
             brake->setVolumeRamp(false);
+            idle->setVolumeRamp(false);
             engine->setVolume(channel.volume);
+            idle->setVolume(channel.volume);
             brake->setVolume(channel.volume);
 
 
@@ -98,10 +102,21 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
             engine->isPlaying(&isPlaying);
             if (!isPlaying && is_car_throttling(car))
             {
-                result = soundsystem.system->playSound(soundsystem.enginesound, 0, false, &engine);
+                result = soundsystem.system->playSound(soundsystem.drivesound, 0, false, &engine);
                 handle_fmod_error();
 
                 brake->stop();
+                idle->stop();
+            }
+
+            isPlaying = false;
+            idle->isPlaying(&isPlaying);
+            if (!isPlaying && !is_car_throttling(car) && !is_car_braking(car)) {
+              result = soundsystem.system->playSound(soundsystem.idlesound, 0, false, &idle);
+              handle_fmod_error();
+
+              brake->stop();
+              engine->stop();
             }
 
             isPlaying = false;
@@ -113,6 +128,7 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
 
                 // also turn off the engine sound
                 engine->stop();
+                idle->stop();
             }
 
             auto body     = car.getVehicleRigidBody();
@@ -123,12 +139,14 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
 
             engine->set3DAttributes(&position, &fmod_vel);
             brake->set3DAttributes(&position, &fmod_vel);
+            idle->set3DAttributes(&position, &fmod_vel);
             // collision->set3DAttributes(&position, &fmod_vel);
         } else {
                 auto & car = scene.GetComponent<Car>(id);
             auto & channel = scene.GetComponent<CarSoundEmitter>(id);
 
             auto & engine = channel.enginechannel;
+            auto& idle = channel.idlechannel;
             auto & brake = channel.brakechannel;
             // auto & collision = channel.collisionchannel;
 
@@ -136,8 +154,11 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
             const float playervolume = 0.25f * channel.volume;
             engine->setVolumeRamp(false);
             brake->setVolumeRamp(false);
-            engine->setVolume(playervolume);
-            brake->setVolume(playervolume);
+            idle->setVolumeRamp(false);
+            engine->setVolume(channel.volume);
+            idle->setVolume(channel.volume);
+            brake->setVolume(channel.volume);
+
 
             
 
@@ -145,10 +166,21 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
             engine->isPlaying(&isPlaying);
             if (!isPlaying && is_car_throttling(car))
             {
-                result = soundsystem.system->playSound(soundsystem.enginesound, 0, false, &engine);
+                result = soundsystem.system->playSound(soundsystem.drivesound, 0, false, &engine);
                 handle_fmod_error();
 
                 brake->stop();
+                idle->stop();
+            }
+
+            isPlaying = false;
+            idle->isPlaying(&isPlaying);
+            if (!isPlaying && !is_car_throttling(car) && !is_car_braking(car)) {
+              result = soundsystem.system->playSound(soundsystem.idlesound, 0, false, &idle);
+              handle_fmod_error();
+
+              brake->stop();
+              engine->stop();
             }
 
             isPlaying = false;
@@ -160,6 +192,7 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
 
                 // also turn off the engine sound
                 engine->stop();
+                idle->stop();
             }
 
             auto body     = car.getVehicleRigidBody();
@@ -177,6 +210,7 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
 
             engine->set3DAttributes(&position, &fmod_vel);
             brake->set3DAttributes(&position, &fmod_vel);
+            idle->set3DAttributes(&position, &fmod_vel);
             // collision->set3DAttributes(&position, &fmod_vel);
         }
     }
@@ -202,8 +236,11 @@ void init_sound_system() {
 	result = soundsystem.system->createSound("audio/brake-6315.mp3", FMOD_3D, 0, &soundsystem.brakesound);
 	handle_fmod_error();
 
-	result = soundsystem.system->createSound("audio/bus-engine-idling-26992.mp3", FMOD_3D, 0, &soundsystem.enginesound);
-	handle_fmod_error();
+  result = soundsystem.system->createSound("audio/engine_drive.mp3", FMOD_3D, 0, &soundsystem.drivesound);
+  handle_fmod_error();
+
+  result = soundsystem.system->createSound("audio/engine_idle.mp3", FMOD_3D, 0, &soundsystem.idlesound);
+  handle_fmod_error();
 
 	result = soundsystem.system->createSound("audio/dark_pit_theme.mp3", FMOD_LOOP_NORMAL, 0, &soundsystem.musicsound);
 	handle_fmod_error();
@@ -220,7 +257,10 @@ void init_sound_system() {
     result = soundsystem.brakesound->set3DMinMaxDistance(1.f, MAX_SOUND_DISTANCE);
     handle_fmod_error();
 
-    result = soundsystem.enginesound->set3DMinMaxDistance(1.f, MAX_SOUND_DISTANCE);
+    result = soundsystem.drivesound->set3DMinMaxDistance(1.f, MAX_SOUND_DISTANCE);
+    handle_fmod_error();
+
+    result = soundsystem.idlesound->set3DMinMaxDistance(1.f, MAX_SOUND_DISTANCE);
     handle_fmod_error();
 
 
