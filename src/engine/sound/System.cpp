@@ -79,139 +79,80 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
 {
     for (auto id : ecs::EntitiesInScene<Car>(scene))
     {
-        
+      //grab sound related references from the car
         auto& car = scene.GetComponent<Car>(id);
-        
-        if (car.m_driverType == DriverType::COMPUTER)
+        auto& channel = scene.GetComponent<CarSoundEmitter>(id);
+        auto& engine = channel.enginechannel;
+        auto& idle = channel.idlechannel;
+        auto& brake = channel.brakechannel;
+
+        engine->setVolumeRamp(false);
+        brake->setVolumeRamp(false);
+        idle->setVolumeRamp(false);
+
+        //set the volume levels
+        float volume = car.m_driverType == DriverType::COMPUTER ? channel.volume * 0.15 /*AI volume*/ : channel.volume * 0.3 /*Player volume*/;
+        engine->setVolume(volume * 0.4);
+        idle->setVolume(volume * 0.6);
+        brake->setVolume(volume);
+
+        //determine what sounds should be playing
+        bool isPlaying = false;
+        engine->isPlaying(&isPlaying);
+        if (!isPlaying && is_car_throttling(car))
         {
-            auto & channel = scene.GetComponent<CarSoundEmitter>(id);
-
-            auto & engine = channel.enginechannel;
-            auto& idle = channel.idlechannel;
-            auto & brake = channel.brakechannel;
-            // auto & collision = channel.collisionchannel;
-            engine->setVolumeRamp(false);
-            brake->setVolumeRamp(false);
-            idle->setVolumeRamp(false);
-            engine->setVolume(channel.volume);
-            idle->setVolume(channel.volume);
-            brake->setVolume(channel.volume);
-
-
-            bool isPlaying = false;
-            engine->isPlaying(&isPlaying);
-            if (!isPlaying && is_car_throttling(car))
-            {
-                result = soundsystem.system->playSound(soundsystem.drivesound, 0, false, &engine);
-                handle_fmod_error();
-
-                brake->stop();
-                idle->stop();
-            }
-
-            isPlaying = false;
-            idle->isPlaying(&isPlaying);
-            if (!isPlaying && !is_car_throttling(car) && !is_car_braking(car)) {
-              result = soundsystem.system->playSound(soundsystem.idlesound, 0, false, &idle);
-              handle_fmod_error();
-
-              brake->stop();
-              engine->stop();
-            }
-
-            isPlaying = false;
-            brake->isPlaying(&isPlaying);
-            if (!isPlaying && is_car_braking(car)) {
-
-                result = soundsystem.system->playSound(soundsystem.brakesound, 0, false, &brake);
-                handle_fmod_error();
-
-                // also turn off the engine sound
-                engine->stop();
-                idle->stop();
-            }
-
-            auto body     = car.getVehicleRigidBody();
-            auto pose     = body->getGlobalPose();
-            auto velocity = body->getLinearVelocity();
-            auto fmod_vel = px_to_fmod_vec3(velocity);
-            auto position = px_to_fmod_vec3(pose.p);
-
-            engine->set3DAttributes(&position, &fmod_vel);
-            brake->set3DAttributes(&position, &fmod_vel);
-            idle->set3DAttributes(&position, &fmod_vel);
-            // collision->set3DAttributes(&position, &fmod_vel);
-        } else {
-                auto & car = scene.GetComponent<Car>(id);
-            auto & channel = scene.GetComponent<CarSoundEmitter>(id);
-
-            auto & engine = channel.enginechannel;
-            auto& idle = channel.idlechannel;
-            auto & brake = channel.brakechannel;
-            // auto & collision = channel.collisionchannel;
-
-            
-            const float playervolume = 0.25f * channel.volume;
-            engine->setVolumeRamp(false);
-            brake->setVolumeRamp(false);
-            idle->setVolumeRamp(false);
-            engine->setVolume(channel.volume);
-            idle->setVolume(channel.volume);
-            brake->setVolume(channel.volume);
-
-
-            
-
-            bool isPlaying = false;
-            engine->isPlaying(&isPlaying);
-            if (!isPlaying && is_car_throttling(car))
-            {
-                result = soundsystem.system->playSound(soundsystem.drivesound, 0, false, &engine);
-                handle_fmod_error();
-
-                brake->stop();
-                idle->stop();
-            }
-
-            isPlaying = false;
-            idle->isPlaying(&isPlaying);
-            if (!isPlaying && !is_car_throttling(car) && !is_car_braking(car)) {
-              result = soundsystem.system->playSound(soundsystem.idlesound, 0, false, &idle);
-              handle_fmod_error();
-
-              brake->stop();
-              engine->stop();
-            }
-
-            isPlaying = false;
-            brake->isPlaying(&isPlaying);
-            if (!isPlaying && is_car_braking(car)) {
-
-                result = soundsystem.system->playSound(soundsystem.brakesound, 0, false, &brake);
-                handle_fmod_error();
-
-                // also turn off the engine sound
-                engine->stop();
-                idle->stop();
-            }
-
-            auto body     = car.getVehicleRigidBody();
-            auto pose     = body->getGlobalPose();
-            auto velocity = body->getLinearVelocity();
-            auto fmod_vel = px_to_fmod_vec3(velocity);
-            auto position = px_to_fmod_vec3(pose.p);
-
-            // set listener position
-            PxMat33 rotation(pose.q);
-            auto forward = px_to_fmod_vec3(rotation * PxVec3{0,0,1});
-            auto up = px_to_fmod_vec3(rotation * PxVec3{0,1,0});
-            result = soundsystem.system->set3DListenerAttributes(0, &position, &fmod_vel, &forward, &up);
+            result = soundsystem.system->playSound(soundsystem.drivesound, 0, false, &engine);
             handle_fmod_error();
 
-            engine->set3DAttributes(&position, &fmod_vel);
-            brake->set3DAttributes(&position, &fmod_vel);
-            idle->set3DAttributes(&position, &fmod_vel);
-            // collision->set3DAttributes(&position, &fmod_vel);
+            brake->stop();
+            idle->stop();
+        }
+
+        isPlaying = false;
+        idle->isPlaying(&isPlaying);
+        if (!isPlaying && !is_car_throttling(car) && !is_car_braking(car)) {
+          result = soundsystem.system->playSound(soundsystem.idlesound, 0, false, &idle);
+          handle_fmod_error();
+
+          brake->stop();
+          engine->stop();
+        }
+
+        isPlaying = false;
+        brake->isPlaying(&isPlaying);
+        if (!isPlaying && is_car_braking(car)) {
+
+            result = soundsystem.system->playSound(soundsystem.brakesound, 0, false, &brake);
+            handle_fmod_error();
+
+            // also turn off the engine sound
+            engine->stop();
+            idle->stop();
+        }
+
+        //calculate properties like attenuation
+        auto body     = car.getVehicleRigidBody();
+        auto pose     = body->getGlobalPose();
+        auto velocity = body->getLinearVelocity();
+        auto fmod_vel = px_to_fmod_vec3(velocity);
+        auto position = px_to_fmod_vec3(pose.p);
+        
+        if (car.m_driverType == DriverType::COMPUTER) {
+          engine->set3DAttributes(&position, &fmod_vel);
+          brake->set3DAttributes(&position, &fmod_vel);
+          idle->set3DAttributes(&position, &fmod_vel);
+        }
+        else {
+          // set listener position
+          PxMat33 rotation(pose.q);
+          auto forward = px_to_fmod_vec3(rotation * PxVec3{ 0,0,1 });
+          auto up = px_to_fmod_vec3(rotation * PxVec3{ 0,1,0 });
+          result = soundsystem.system->set3DListenerAttributes(0, &position, &fmod_vel, &forward, &up);
+          handle_fmod_error();
+
+          engine->set3DAttributes(&position, &fmod_vel);
+          brake->set3DAttributes(&position, &fmod_vel);
+          idle->set3DAttributes(&position, &fmod_vel);
         }
     }
 
@@ -249,7 +190,7 @@ void init_sound_system() {
 	handle_fmod_error();
 
     // make music quiet
-    result = soundsystem.musicchannel->setVolume(0.1f);
+    result = soundsystem.musicchannel->setVolume(0.2f);
     handle_fmod_error();
 
     // fix attenuation
