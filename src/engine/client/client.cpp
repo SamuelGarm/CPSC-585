@@ -1,4 +1,3 @@
-#define ImGUI_Enabled
 #include <iostream>
 
 
@@ -29,6 +28,7 @@
 
 #include "engine/debug/CenterMass.hpp"
 #include "engine/systems/PhysicsSystem.hpp"
+#include "engine/londonFog.hpp"
 
 #include "engine/vehicle/Car.hpp"
 #include "engine/vehicle/CarUtils.hpp"
@@ -47,39 +47,45 @@
 #include <ctime>   // localtime
 
 
+/*--------------------------------
+*	Developer adjustable parameters
+--------------------------------*/
+//How long the starting countdown will last before the race starts
+float startCountdown = 5.0f;
 
-float startCountdown{5.0f};
-
-
-bool loadLevelMesh{false};
-bool levelMeshLoaded{false};
-
-glm::vec3 calculateSpherePoint(float s, float t)
-{
-	float z = cos(2 * M_PI * t) * sin(M_PI * s);
-	float x = sin(2 * M_PI * t) * sin(M_PI * s);
-	float y = cos(M_PI * s);
-	return(glm::vec3(x, y, z));
-}
-
+//Will the debug ImGUI panel be displayed in the game. Note this is only the initial state and can be toggled in the game
 bool showImgui = false;
-
-int lapCount = 0;
-bool isFinished = false;
-
-bool navPathToggle = true;
 
 // Boolean to toggle gameplay mode
 // (follow cam, full level mesh, navmesh off, backface culling off)
 bool gameplayMode = true;
+
+//Is the AI nav path visible at startup, this can be toggled in the debug menu as well
+bool navPathToggle = true;
+
+/*--------------------------------
+*	end Developer adjustable parameters
+--------------------------------*/
+
+
+//global variables (yeah... not best practice but gets the job done in a pinch)
 bool raceCountdown = false;
-bool gamePaused = false;
+bool gamePaused = true;
+bool loadLevelMesh = false;
+bool levelMeshLoaded = false;
 
 uint32_t lastTime_millisecs;
+
+//this needs to be global since it contains menu state 
+LondonFog* ui = nullptr;
 
 
 void resetLevel(Car& testCar, std::vector<Guid> ais, ecs::Scene& mainScene, std::vector<glm::vec3> spawnPoints, RaceTracker& raceSystem, float& acc_t, glm::vec3 forward)
 {
+	//if we are not racing the level should not be reset
+	if (ui->m_status != MenuStatus::RACING_SCREEN)
+		return;
+
 	glm::quat q = quatLookAt(forward, { 0,1.f,0 });
 
 	// Ai Reset
@@ -109,14 +115,17 @@ void resetLevel(Car& testCar, std::vector<Guid> ais, ecs::Scene& mainScene, std:
 
 }
 
+//toggles between gameplay mode and fly-cam mode (for debugging)
 void gamePlayToggle(bool toggle, ecs::Scene &mainScene, std::vector<Guid> aiCars, GraphicsSystem &gs) {
 	if (toggle) {
 		loadLevelMesh = true;
 		navPathToggle = false;
 		gs.s_cameraMode(3); // follow cam
 
+		if (ui->m_status != MenuStatus::RACING_SCREEN)
+			return;
 		raceCountdown = true;
-		startCountdown = 5.0f;
+		startCountdown = 5.0f; 
 
 		// Turns off the direction line for all AI
 		for (int i = 0; i < aiCars.size(); i++) {
@@ -125,11 +134,12 @@ void gamePlayToggle(bool toggle, ecs::Scene &mainScene, std::vector<Guid> aiCars
 			AIDirection.setGeometry(blank);
 		}
 
-		showImgui = true;
+		showImgui = false;
 	}
 	else {
 		loadLevelMesh = false;
 		navPathToggle = true;
+		showImgui = true;
 		gs.s_cameraMode(1); // free cam
 
 		raceCountdown = false;
@@ -146,6 +156,7 @@ void gamePlayToggle(bool toggle, ecs::Scene &mainScene, std::vector<Guid> aiCars
 	}
 }
 
+
 int main(int argc, char* argv[]) {
 	//RUN_GRAPHICS_TEST_BENCH();
 	printf("Starting main\n");
@@ -154,9 +165,9 @@ int main(int argc, char* argv[]) {
 
 	lastTime_millisecs = SDL_GetTicks();
 
-#ifdef ImGUI_Enabled
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-#endif
+
+	ui = new LondonFog();
 
 	/**
 	 * Begin initialization of ECS systems, entities, etc.
@@ -181,7 +192,6 @@ int main(int argc, char* argv[]) {
 	glm::vec3 desiredSpawnLocation = {-4.108957, 3.397303, -43.794819}; // hardcoded value near the straight strip of the track
 	Curve raceTrackingCurve(zzPathGeom.verts);
 
-#ifdef ImGUI_Enabled
 	//load fonts into ImGui
 	io.Fonts->AddFontDefault();
 	ImFont* Debrosee = io.Fonts->AddFontFromFileTTF("fonts/Debrosee-ALPnL.ttf", 18.5f);
@@ -192,7 +202,6 @@ int main(int argc, char* argv[]) {
 	IM_ASSERT(CabalBold != NULL);
 	ImFont* ExtraLarge = io.Fonts->AddFontFromFileTTF("fonts/EXTRA LARGE.ttf", 18.5f);
 	IM_ASSERT(ExtraLarge != NULL);
-#endif
 	
 
 	// init ecs 
@@ -317,6 +326,7 @@ int main(int argc, char* argv[]) {
 			pipe_t.setPosition(glm::vec3(-0.65, 1.54, 2.1));
 		pipe_t.setScale(glm::vec3(1));
 		VFXBillboard flame_b = VFXBillboard("textures/Fire.png", glm::vec3(1, 1, 0));
+		//The black smoke works but it obscures the players view of the vehicle, for now it is disabled but it might be worth looking into in the future
 		/*
 		VFXParticleSystem flame_p = VFXParticleSystem("textures/blackSmoke.png", 25);
 		flame_p.initialVelocityMin = glm::vec3(-0.1, 0, -0.1);
@@ -333,9 +343,9 @@ int main(int argc, char* argv[]) {
 		*/
 		mainScene.AddComponent(exhausePipes[i].guid, flame_b);
 		mainScene.AddComponent(exhausePipes[i].guid, pipe_t);
-		//mainScene.AddComponent(exhausePipes[i].guid, flame_p);
-		
 	}
+		
+	
 	
 	RaceTracker raceSystem{raceTrackingCurve, desiredSpawnLocation};	
 
@@ -428,10 +438,10 @@ int main(int argc, char* argv[]) {
 
 	/*
 	* Demonstration of the Billboard Component. It always expects a texture to be used and an optinal locking axis can be used
-	* The Billboard will always try to face the camera
+	* The Billboard will always try to face the camera.
 	*/
 	ecs::Entity billboard = mainScene.CreateEntity();
-	VFXBillboard bill_r = VFXBillboard("textures/CFHX3384.JPG", glm::vec3(0, 1, 0));
+	VFXBillboard bill_r = VFXBillboard("textures/test.png", glm::vec3(0, 1, 0));
 	TransformComponent bill_t = TransformComponent();
 	bill_t.setPosition(glm::vec3(0, 20, 0));
 	bill_t.setScale(glm::vec3(10, 5, 0));
@@ -481,7 +491,11 @@ int main(int argc, char* argv[]) {
 		start_button_current_frame[i] = false;
 	}
 
+	
+
 		std::cout << "initalization finished, beginning game\n";
+
+
 
 	// GAME LOOP
 	while (!quit) {
@@ -515,6 +529,7 @@ int main(int argc, char* argv[]) {
 		testCar.m_Vehicle.mPhysXState.physxActor.rigidBody->setLinearDamping(default_lin_damp);
 		testCar.m_Vehicle.mPhysXState.physxActor.rigidBody->setAngularDamping(default_ang_damp);
 
+
 		for (int i = 0; i < AIGuids.size(); i++) {
 			Car& aiCar = mainScene.GetComponent<Car>(AIGuids.at(i));
 			aiCar.m_Vehicle.mPhysXState.physxActor.rigidBody->setLinearDamping(default_lin_damp);
@@ -528,13 +543,13 @@ int main(int argc, char* argv[]) {
 		//polls all pending input events until there are none left in the queue
 		SDL_Event windowEvent;
 		while (SDL_PollEvent(&windowEvent)) {
-#ifdef ImGUI_Enabled
+
 			ImGui_ImplSDL2_ProcessEvent(&windowEvent);
-#endif
+
 
 			if (windowEvent.type == SDL_CONTROLLERDEVICEADDED) {
 				std::cout << "Adding controller\n";
-				ControllerInput::init_controller();
+				ControllerInput::initControllers();
 			}
 
 			if (windowEvent.type == SDL_CONTROLLERDEVICEREMOVED) {
@@ -697,11 +712,17 @@ int main(int argc, char* argv[]) {
 		raceSystem.Update(mainScene,time_diff);
 
 		//update_sounds(testCar, aiCarInstance, playSounds);
-        soundUpdater.Update(mainScene, time_diff);
+		float vehicleVolume = ui->m_status == MenuStatus::MAIN_SCREEN ? 0 : 1;
+		for (auto id : ecs::EntitiesInScene<Car>(mainScene))
+		{
+			auto& car = mainScene.GetComponent<Car>(id);
+			auto& channel = mainScene.GetComponent<CarSoundEmitter>(id);
+			channel.volume = vehicleVolume;
+		}
+    soundUpdater.Update(mainScene, time_diff);
 
 		// END__ ECS SYSTEMS UPDATES
 
-#ifdef ImGUI_Enabled
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
@@ -777,24 +798,8 @@ int main(int argc, char* argv[]) {
 			ImGuiWindowFlags_NoDecoration |			// no decoration; only the text should be visible
 			ImGuiWindowFlags_NoTitleBar;			// no title; only the text should be visible
 		
-		//Lap counter
-		ImGui::SetNextWindowPos(ImVec2(10, 10));
-		ImGui::Begin("UI", (bool*)0, textWindowFlags);
-		ImGui::SetWindowFontScale(2.f);
-		ImGui::PushFont(CabalBold);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Lap: %d/%d", raceSystem.getLapCount(carGuid), raceSystem.MAX_LAPS);
-		ImGui::PopFont();
-		ImGui::End();
-		
-		//Lap counter
-		ImGui::SetNextWindowPos(ImVec2(10, 30));
-		ImGui::Begin("UI", (bool*)0, textWindowFlags);
-		ImGui::SetWindowFontScale(2.f);
-		ImGui::PushFont(CabalBold);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Rank: %d/%d", raceSystem.getRanking(carGuid), spawnPoints.size() );
-		ImGui::PopFont();
-		ImGui::End();
-
+		ui->drawMenu({ 0,0,1200,800 });
+		ui->drawHUD(carGuid, mainScene, { 0,0,1200,800 }, raceSystem);
 
 		//you win message
 		static int counter = 0;
@@ -828,6 +833,9 @@ int main(int argc, char* argv[]) {
 
 		}
 
+		if (gamePaused && ui->m_status == MenuStatus::RACING_SCREEN)
+			raceCountdown = true;
+
 		if (raceCountdown)
 		{
 			if (startCountdown > 0.f)
@@ -849,7 +857,7 @@ int main(int argc, char* argv[]) {
 			}
 		} 
 
-#endif
+
 		//glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
 		window.RenderAndSwap();
 	}

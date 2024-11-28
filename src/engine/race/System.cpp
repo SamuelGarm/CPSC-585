@@ -55,9 +55,14 @@ void RaceTracker::Update(ecs::Scene& scene, float deltaTime) {
     // first see if the car's completed a lap
     if ((car.checkpoints == m_checkpoints.size() - 1) && abs(car.curveIndex - m_checkpoints[0]) == 0)
     {
-      car.lapCount++;
+      if (!car.isFinished)
+      {
+        car.lapCount++;
+      }
+      
       if (car.lapCount == MAX_LAPS+1)
       {
+        car.lapCount = MAX_LAPS;
         m_raceFinished = true; // the whole race
         car.isFinished = true; // each individual racer
       }

@@ -8,6 +8,7 @@ uniform sampler2D gDepth;
 uniform sampler2D gShadow;
 uniform sampler2D gVFXColor;
 uniform sampler2D gVFXDepth;
+uniform samplerCube cubemap;
 
 //variable uniforms
 uniform float normalDiffWeight = 1;
@@ -37,15 +38,9 @@ float LinearizeDepth(float depth)
 }
 
 void main()
-{         
-	float rawDepth = texture(gDepth, tc).x;
-	if(rawDepth == 1) {
-		color = texture(gColor, tc).xyz;
-	}
-	else {
-
-		float tdepth = LinearizeDepth(rawDepth);
-		float VFXdepth = LinearizeDepth(texture(gVFXDepth, tc).x);
+{             
+	float tdepth = LinearizeDepth(texture(gDepth, tc).x);
+	float VFXdepth = LinearizeDepth(texture(gVFXDepth, tc).x);
 
 
 		vec3 tposition = texture(gPosition, tc).xyz;
@@ -98,6 +93,6 @@ void main()
 		color = mix(mix(quantized, gooch, goochWeight), vec3(0,0,0), outline) * ((1-shadow) + (shadow * 0.4));
 		if(tdepth - VFXdepth > 0) 
 			color = texture(gVFXColor, tc).xyz;
-	}
+	
 
 }

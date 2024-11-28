@@ -8,6 +8,7 @@ struct CarSoundEmitter {
     FMOD::Channel* enginechannel = NULL;
     FMOD::Channel* brakechannel = NULL;
     // FMOD::Channel* collisionchannel = NULL;
+    float volume = 0; //0-1
 };
 
 struct SoundUpdater : ecs::ISystem

@@ -18,7 +18,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 add_executable(libengine)
+message("Adding console")
+else()
+add_executable(libengine WIN32)
+message("no console")
+endif()
 
 #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
@@ -173,6 +179,7 @@ add_subdirectory("physics")
 add_subdirectory("race")
 add_subdirectory("sound")
 add_subdirectory("vehicle")
+add_subdirectory("londonFog")
 
 #get_cmake_property(_variableNames VARIABLES)
 #list (SORT _variableNames)

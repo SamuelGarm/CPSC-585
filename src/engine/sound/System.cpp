@@ -66,6 +66,7 @@ void SoundUpdater::Initialize() {}
 void SoundUpdater::Initialize(ecs::Scene &scene)
 {
     CarSoundEmitter emitter = {};
+    emitter.volume = 0;
 
     for (auto id : ecs::EntitiesInScene<Car>(scene))
     {
@@ -87,6 +88,11 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
             auto & engine = channel.enginechannel;
             auto & brake = channel.brakechannel;
             // auto & collision = channel.collisionchannel;
+            engine->setVolumeRamp(false);
+            brake->setVolumeRamp(false);
+            engine->setVolume(channel.volume);
+            brake->setVolume(channel.volume);
+
 
             bool isPlaying = false;
             engine->isPlaying(&isPlaying);
@@ -126,11 +132,14 @@ void SoundUpdater::Update(ecs::Scene &scene, float deltaTime)
             auto & brake = channel.brakechannel;
             // auto & collision = channel.collisionchannel;
 
-            {
-                const float playervolume = 0.25f;
-                engine->setVolume(playervolume);
-                brake->setVolume(playervolume);
-            }
+            
+            const float playervolume = 0.25f * channel.volume;
+            engine->setVolumeRamp(false);
+            brake->setVolumeRamp(false);
+            engine->setVolume(playervolume);
+            brake->setVolume(playervolume);
+
+            
 
             bool isPlaying = false;
             engine->isPlaying(&isPlaying);
