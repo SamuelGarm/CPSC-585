@@ -16,7 +16,18 @@ namespace ControllerInput {
 		controller = nullptr;
 	}
 
-	
+	bool controllerAlreadyRegistered(SDL_GameController* gc)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (controllers[i] == gc)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void initControllers() 
 	{
 		
@@ -24,7 +35,13 @@ namespace ControllerInput {
 		for (int i = 0; i < numcontrollers && i < 4; i++)
 		{
 			if (controllers[i] == nullptr)
-				controllers[i] = SDL_GameControllerOpen(i);
+			{
+				SDL_GameController* c = SDL_GameControllerOpen(i);
+				if (!controllerAlreadyRegistered(c))
+				{
+					controllers[i] = c;
+				}
+			}
 		}
 		
 	}
@@ -38,7 +55,7 @@ namespace ControllerInput {
 			if (c != nullptr)
 			{
 				SDL_GameControllerClose(c);
-				controller = nullptr;
+				c = nullptr;
 			}
 		}
 	}

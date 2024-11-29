@@ -4,12 +4,15 @@
 #include "engine/systems/Graphics.hpp"
 #include "engine/systems/PhysicsSystem.hpp"
 #include "engine/PxConversionUtils.hpp"
+#include "engine/systems/RaceSystem.hpp"
 
 #include "glm/glm.hpp"
 #include <iostream>
+#include <algorithm>
+#include <random>
 
 // will instantiate an AI car
-Guid spawnCar(DriverType type, ecs::Scene& scene, physics::PhysicsSystem* physicsSystem, glm::vec3 position, glm::vec3 forward, Curve* track, NavPath* navPath)
+Guid spawnCar(DriverType type, ecs::Scene& scene, physics::PhysicsSystem* physicsSystem, glm::vec3 position, glm::vec3 forward, Curve* track, NavPath* navPath, std::string name)
 {
 
 	// all vehicles are entities that consists of the following components
@@ -34,7 +37,7 @@ Guid spawnCar(DriverType type, ecs::Scene& scene, physics::PhysicsSystem* physic
   PxTransform pose(initialPosition,initialRotation);
 
   // initialize the physx vehicle, associated data.
-  aiCar.Initialize(type, pose, physicsSystem, track, navPath);
+  aiCar.Initialize(type, pose, physicsSystem, track, navPath, name);
 	
   // renderer
 	RenderModel aiDriver_r = RenderModel();
@@ -71,6 +74,25 @@ Guid spawnCar(DriverType type, ecs::Scene& scene, physics::PhysicsSystem* physic
     scene.AddComponent(aiDriver_e.guid, aiVehicleDirection);
   }
 
+	scene.AddComponent(aiDriver_e.guid, ProgressTracker{ aiDriver_e.guid });
+
+
+
+	// add nameplates
+
+	ecs::Entity nameplate = scene.CreateEntity();
+	TransformComponent nameplate_t = TransformComponent(aiCar.getVehicleRigidBody());
+	std::string nameplate_name = "textures/nameplates/" + aiCar.m_name + ".png";
+	VFXBillboard nameplate_b = VFXBillboard(nameplate_name, glm::vec3(1, 1, 0));
+	float size = 0.65f;
+	nameplate_t.setScale(glm::vec3(size * 3.f, size, 0));
+	nameplate_t.setPosition(glm::vec3(0, 2.6, 1));
+
+	scene.AddComponent(nameplate.guid, nameplate_t);
+	scene.AddComponent(nameplate.guid, nameplate_b);
+
+	TransformComponent& wrongWaySign_t = scene.GetComponent<TransformComponent>(nameplate.guid);
+
   return aiDriver_e.guid; 
 
 }
@@ -105,4 +127,26 @@ std::vector<glm::vec3> spawnpointsAlongAxis(int rows, int cols,float spread, glm
 
 	return result;
 
+}
+
+std::vector<std::string> getPlayerNames()
+{
+	std::vector<std::string> names;
+
+	names.push_back("Zeus");
+	names.push_back("Poseidon");
+	names.push_back("Ares");
+	names.push_back("Aphrodite");
+	names.push_back("Hera");
+	names.push_back("Demeter");
+	names.push_back("Athena");
+	names.push_back("Apollo");
+	names.push_back("Artemis");
+	names.push_back("Hephaestus");
+	names.push_back("Hermes");
+	names.push_back("Dionysus");
+
+	auto rng = std::default_random_engine{};
+	std::shuffle(std::begin(names), std::end(names), rng);
+	return names;
 }

@@ -14,6 +14,8 @@
 struct attachedVFX {
 	Guid ownerGuid;
 	Guid trackGuids[3];
+	Guid rampSparklerGuid;
+	Guid boostSparklerGuid;
 	bool isAI;
 };
 
@@ -98,7 +100,42 @@ void setupCarVFX(ecs::Scene& mainScene, Guid _ID) {
 	leftParticles.particleLife = 1;
 	mainScene.AddComponent(leftTireTrack.guid, leftParticles);
 
-	VFXGuids.push_back({ _ID, frontTireTrack.guid, rightTireTrack.guid, leftTireTrack.guid, isAI });
+	ecs::Entity rampSparkler = mainScene.CreateEntity();
+	TransformComponent rampSparkler_t = TransformComponent(car->getVehicleRigidBody());
+	mainScene.AddComponent(rampSparkler.guid, rampSparkler_t);
+
+	// sparkles
+	VFXParticleSystem rampParticles = VFXParticleSystem("textures/ramp-particle.png", 50);
+	leftParticles.initialPositionMin = glm::vec3(0, 0, 0);
+	leftParticles.initialPositionMax = glm::vec3(0, 0, 0);
+	leftParticles.initialVelocityMin = glm::vec3(10, 0.5, 0);
+	leftParticles.initialVelocityMax = glm::vec3(-10, 0.7, 0);
+	leftParticles.alphaChangeMin = -0.6;
+	leftParticles.alphaChangeMax = -1.2;
+	leftParticles.scaleSpeedMin = -0.7;
+	leftParticles.scaleSpeedMax = -1;
+	leftParticles.particleLife = 1;
+	mainScene.AddComponent(rampSparkler.guid, rampParticles);
+
+	ecs::Entity boostSparkler = mainScene.CreateEntity();
+	TransformComponent boostSparkler_t = TransformComponent(car->getVehicleRigidBody());
+	mainScene.AddComponent(boostSparkler.guid, boostSparkler_t);
+
+	// sparkles
+	VFXParticleSystem boostParticles = VFXParticleSystem("textures/boost-particle.png", 50);
+	leftParticles.initialPositionMin = glm::vec3(0, 0, 0);
+	leftParticles.initialPositionMax = glm::vec3(0, 0, 0);
+	leftParticles.initialVelocityMin = glm::vec3(10, 0.5, 0);
+	leftParticles.initialVelocityMax = glm::vec3(-10, 0.7, 0);
+	leftParticles.alphaChangeMin = -0.6;
+	leftParticles.alphaChangeMax = -1.2;
+	leftParticles.scaleSpeedMin = -0.7;
+	leftParticles.scaleSpeedMax = -1;
+	leftParticles.particleLife = 1;
+	mainScene.AddComponent(boostSparkler.guid, boostParticles);
+
+
+	VFXGuids.push_back({ _ID, frontTireTrack.guid, rightTireTrack.guid, leftTireTrack.guid,rampSparkler.guid, boostSparkler.guid, isAI });
 	previousStates.push_back({ false, false, false });
 }
 
@@ -224,6 +261,18 @@ void updateCarVFX(ecs::Scene mainScene, float dt) {
 		rightTireParticle.stepSystem(dt, rightTireTransform.getTransformationMatrix());
 		leftTireParticle.stepSystem(dt, leftTireTransform.getTransformationMatrix());
 		
+		VFXParticleSystem& rampSparklerParticle = mainScene.GetComponent<VFXParticleSystem>(vfx.rampSparklerGuid);
+		TransformComponent rampSparkler_t = mainScene.GetComponent<TransformComponent>(vfx.rampSparklerGuid);
+		rampSparklerParticle.active = (car->m_timeSinceLastRamp < 3.0f && !car->m_grounded) ? true : false;
+		rampSparklerParticle.particleFrequency = frequency;
+
+		VFXParticleSystem& sparklerParticle = mainScene.GetComponent<VFXParticleSystem>(vfx.boostSparklerGuid);
+		TransformComponent sparkler_t = mainScene.GetComponent<TransformComponent>(vfx.boostSparklerGuid);
+		sparklerParticle.active = (car->m_timeSinceLastBoost < 3.0f && !car->m_grounded) ? true : false;
+		sparklerParticle.particleFrequency = frequency;
+
+		sparklerParticle.stepSystem(dt, rampSparkler_t.getTransformationMatrix());
+		rampSparklerParticle.stepSystem(dt, sparkler_t.getTransformationMatrix());
 	}
 	
 }
