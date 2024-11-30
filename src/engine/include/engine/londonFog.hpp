@@ -5,9 +5,11 @@
 
 #include <unordered_map>
 #include <GL/glew.h>
+#include <functional>
 #include "engine/systems/RaceSystem.hpp"
 #include "stb_image.h"
 
+// Simple helper function to load an image into a OpenGL texture with common settings
 bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height);
 
 struct UITexture {
@@ -24,12 +26,11 @@ struct UITexture {
     assert(isLoaded);
   }
 
-  //render a texture at the full screen size
   void Render() {
+    // will just render full size
     ImGui::Image((ImU64)image_texture, ImVec2(width, height));
   }
 
-  //render a texture at a specified size
   void Render(float w, float h) {
     ImGui::Image((ImU64)image_texture, ImVec2(w, h));
   }
@@ -46,7 +47,6 @@ enum Corner {
   BOTTOM_LEFT,
   BOTTOM_RIGHT
 };
-
 struct BoundingBox {
   int x, y, w, h;
 
@@ -85,6 +85,7 @@ struct BoundingBox {
       return ImVec2();
     }
   }
+
 };
 
 
@@ -94,7 +95,8 @@ enum MenuStatus {
   CONTROLS_SCREEN,
   PAUSE_SCREEN,
   RACING_SCREEN,
-  LOADING_SCREEN
+  LOADING_SCREEN, // lowkey just the controls screen ? idk
+  RESULTS_SCREEN,
 };
 
 struct LondonFog {
@@ -112,11 +114,13 @@ struct LondonFog {
   // sets the global imgui style
   void setStyle();
 
-  // draws the hud for a player in their region
-  void drawHUD(Guid carGuid, ecs::Scene scene, BoundingBox region, RaceTracker& raceSystem);
-  void drawMenu(BoundingBox region);
-  void loadFonts();
 
   MenuStatus m_status{ MenuStatus::MAIN_SCREEN };
+
+  // draws the hud for a player in their region
+  void drawHUD(Guid carGuid, ecs::Scene& scene, BoundingBox region, RaceTracker& raceSystem);
+  void loadFonts();
+  void drawMenu(BoundingBox region, std::function<void(void)> resetCallback, std::function<void(int)> cameraCallback, std::function<void()> togglePauseCallback, ecs::Scene& scene, RaceTracker& raceSystem);
   void loadTextures();
+
 };

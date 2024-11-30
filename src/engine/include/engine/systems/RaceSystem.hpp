@@ -54,6 +54,7 @@ struct RaceTracker : ecs::ISystem {
   bool isCarFinished(Guid guid);
 
   bool humanRacersFinished(std::vector<Guid> humanGuids);
+  std::vector<Guid>& getOrderedRankings() { return m_orderedRankings; };
 
   std::map<Guid,int>& getRankings() { return m_rankings; };
 private: 

@@ -77,6 +77,13 @@ public:
 		return glm::translate(glm::mat4(1), getTranslation()) * toMat4(getRotation()) * glm::scale(glm::mat4(1), getScale());
 	}
 
+	void attachActor(physx::PxRigidActor* _actor) {
+		actor = _actor;
+	}
+	void detatchActor() {
+		actor = nullptr;
+	}
+
 private:
 	friend class GraphicsSystem;
 	glm::vec3 position = glm::vec3(0);

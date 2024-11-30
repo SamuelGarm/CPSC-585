@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <chrono>  // chrono::system_clock
 #include <ctime>   // localtime
+#define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/string_cast.hpp"
 
 #include "imgui.h"
@@ -19,7 +20,7 @@
 #include "engine/vehicle/Car.hpp"
 #include "engine/vehicle/CarUtils.hpp"
 #include "engine/vehicle/TireTracks.hpp"
-#include "engine/vehicle/CollisionSounds.hpp"
+#include "engine/CollisionSounds.hpp"
 
 #include "engine/systems/Graphics.hpp"
 #include "engine/systems/PhysicsSystem.hpp"
@@ -77,9 +78,6 @@ LondonFog* ui = nullptr;
 
 void resetLevel(Car& testCar, std::vector<Guid> ais, ecs::Scene& mainScene, std::vector<glm::vec3> spawnPoints, RaceTracker& raceSystem, float& acc_t, glm::vec3 forward, int number_players, GraphicsSystem& gs)
 {
-	//if we are not racing the level should not be reset
-	if (ui->m_status != MenuStatus::RACING_SCREEN)
-		return;
 
 	glm::quat q = quatLookAt(forward, { 0,1.f,0 });
 
@@ -182,16 +180,15 @@ int main(int argc, char* argv[]) {
 	 * - Physics
 	 * - AI
 	 */
-
-	// first and foremost, create a scene.
-	ecs::Scene mainScene;
+	//physics::PhysicsSystem physicsSystem{};
+	using namespace physics;
+	physicsSystem.Initialize();
 
 	GraphicsSystem gs = GraphicsSystem();
 
-	physics::PhysicsSystem physicsSystem{};
-	physicsSystem.Initialize();
-
-
+	// first and foremost, create a scene.
+	ecs::Scene mainScene;
+	
 
 	CPU_Geometry zzPathGeom;
 	GraphicsSystem::importSplineFromOBJ(zzPathGeom, "zz-track-nav.obj");

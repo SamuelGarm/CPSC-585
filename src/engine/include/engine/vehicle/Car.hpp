@@ -139,8 +139,8 @@ struct Car {
     Command pathfind(ecs::Scene& scene, float deltaTime);
     /////////////////////////////////////////
 
-    float m_timeSinceLastRamp{ 0.f };
-    float m_timeSinceLastBoost{ 0.f };
+    float m_timeSinceLastRamp = 10.f;
+    float m_timeSinceLastBoost = 10.f;
     std::string m_name;
     bool m_grounded{ false };
 

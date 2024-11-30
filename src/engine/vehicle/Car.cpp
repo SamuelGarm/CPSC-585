@@ -4,7 +4,7 @@
 #include "engine/components/LevelCollider.hpp"
 #include "engine/systems/RaceSystem.hpp"
 #include "engine/CollisionSounds.hpp"
-
+#define GLM_ENABLE_EXPERIMENTAL
 #include "glm/glm.hpp"
 #include <glm/gtx/projection.hpp>
 #include "imgui.h"
@@ -592,7 +592,7 @@ Command Car::drive(Guid carGuid, ecs::Scene& scene, float deltaTime)
     if (m_driverType == DriverType::COMPUTER || (m_driverType == HUMAN && pt.isFinished))
     {
       updateTimer += deltaTime;
-      if (updateTimer >= 0.2) {
+      if (updateTimer >= 0.1) {
         updateTimer = 0;
         lastCommand = pathfind(scene, deltaTime);
         
