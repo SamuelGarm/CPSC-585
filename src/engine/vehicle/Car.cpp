@@ -592,7 +592,7 @@ Command Car::drive(Guid carGuid, ecs::Scene& scene, float deltaTime)
     if (m_driverType == DriverType::COMPUTER || (m_driverType == HUMAN && pt.isFinished))
     {
       updateTimer += deltaTime;
-      if (updateTimer >= 0.1) {
+      if (updateTimer >= 0.05) {
         updateTimer = 0;
         lastCommand = pathfind(scene, deltaTime);
         

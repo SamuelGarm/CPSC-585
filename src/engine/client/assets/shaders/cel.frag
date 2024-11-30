@@ -38,9 +38,15 @@ float LinearizeDepth(float depth)
 
 void main()
 {         
-	float rawDepth = texture(gDepth, tc).x;
+	//Since VFX are in a different depth and color texture we need to combine them in this shader
+	//Determine 
+	float rawDepth = min(texture(gDepth, tc).x, texture(gVFXDepth, tc).x);
+	//If there is no object drawn then sample the color channel with no lighting to render the skybox
 	if(rawDepth == 1) {
 		color = texture(gColor, tc).xyz;
+	//if the depth is equal to the VFX buffer depth sample VFX color with no lighting
+	} else if (rawDepth ==  texture(gVFXDepth, tc).x) {
+		color = texture(gVFXColor, tc).xyz;
 	}
 	else {
 
@@ -96,8 +102,6 @@ void main()
 		//if shadow = 1 then the pixel is in shadow
 		//color = (outline >= 0.5 ? mix(quantized, gooch, goochWeight) : vec3(0,0,0)) * ((1-shadow) + (shadow * 0.4));
 		color = mix(mix(quantized, gooch, goochWeight), vec3(0,0,0), outline) * ((1-shadow) + (shadow * 0.4));
-		if(tdepth - VFXdepth > 0) 
-			color = texture(gVFXColor, tc).xyz;
 	}
 
 }
