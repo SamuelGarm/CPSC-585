@@ -26,7 +26,9 @@ CMakePresets.json
 CMakeUserPresets.json
 **/.vs/**
 src/engine/out/**
-src/engine/thirdparty/physx/**
-!src/engine/thirdparty/physx/Release/WindowsPrebuiltRelease.zip
-!src/engine/thirdparty/physx/Debug/physx_binaries.zip
+!src/engine/thirdparty/physx/
+!src/engine/thirdparty/physx/Release/*.lib
+!src/engine/thirdparty/physx/Debug/*.lib
+src/engine/thirdparty/physx/Release/WindowsPrebuiltRelease.zip
+src/engine/thirdparty/physx/Debug/physx_binaries.zip
 src/engine/out/**
