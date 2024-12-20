@@ -183,7 +183,7 @@ void init_sound_system() {
   result = soundsystem.system->createSound("audio/engine_idle.mp3", FMOD_3D, 0, &soundsystem.idlesound);
   handle_fmod_error();
 
-	result = soundsystem.system->createSound("audio/dark_pit_theme.mp3", FMOD_LOOP_NORMAL, 0, &soundsystem.musicsound);
+	result = soundsystem.system->createSound("audio/BG_Music.mp3", FMOD_LOOP_NORMAL, 0, &soundsystem.musicsound);
 	handle_fmod_error();
 
     result = soundsystem.system->playSound(soundsystem.musicsound, 0, false, &soundsystem.musicchannel);
