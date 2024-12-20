@@ -354,6 +354,30 @@ void LondonFog::drawMenu(BoundingBox region, std::function<void(void)> resetCall
 
   if (m_status == MAIN_SCREEN)
   {
+    ImVec2 blCorner = region.getCorner(Corner::BOTTOM_LEFT);
+    ImVec2 trCorner = region.getCorner(Corner::TOP_RIGHT);
+    ImVec2 brCorner = region.getCorner(Corner::BOTTOM_RIGHT);
+    ImVec2 tlCorner = region.getCorner(Corner::TOP_LEFT);
+
+
+    //draw the logos for PhysX and FMod as per their license requirments
+    ImGui::Begin("FMod Attributions", false, logoWindowFlags);
+    float size = 30;
+    ImVec2 imageSize = { size * 2.71f, size }; // enforce aspect ratio
+    m_texts["FModLogo"].Render(imageSize);
+    ImVec2 v = ImGui::GetWindowSize();
+    ImVec2 textOffset = { 0.f, -45.f };
+    ImGui::SetWindowPos(ImVec2(blCorner.x + textOffset.x, brCorner.y + textOffset.y));
+    ImGui::End();
+
+    ImGui::Begin("PhysX Attributions", false, logoWindowFlags);
+    size = 40;
+    imageSize = { size * 2.71f, size }; // enforce aspect ratio
+    m_texts["PhysXLogo"].Render(imageSize);
+    v = ImGui::GetWindowSize();
+    textOffset = { 100.f, -50.f };
+    ImGui::SetWindowPos(ImVec2(blCorner.x + textOffset.x, brCorner.y + textOffset.y));
+    ImGui::End();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 30.f, 20.f });
     ImGui::PushFont(m_fonts["JockeyOne"]);
@@ -361,8 +385,6 @@ void LondonFog::drawMenu(BoundingBox region, std::function<void(void)> resetCall
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, colorCodeToImguiVec("#000000", 0.65f));
     // draw our names :D
-
-    ImVec2 blCorner = region.getCorner(Corner::BOTTOM_LEFT);
     ImGui::SetNextWindowSize(AUTO_RESIZE);
     ImGui::Begin("authors", false, lfWindowFlags);
 
@@ -373,8 +395,8 @@ void LondonFog::drawMenu(BoundingBox region, std::function<void(void)> resetCall
     ImGui::PopFont();
 
 
-    ImVec2 v = ImGui::GetWindowSize();
-    ImVec2 textOffset = { 0.f, 40.f };
+    v = ImGui::GetWindowSize();
+    textOffset = { 0.f, 40.f };
     ImGui::SetWindowPos(ImVec2(blCorner.x + textOffset.x, blCorner.y - v.y - textOffset.y));
 
     ImGui::End();
@@ -384,26 +406,13 @@ void LondonFog::drawMenu(BoundingBox region, std::function<void(void)> resetCall
     ImGui::PushStyleColor(ImGuiCol_WindowBg, colorCodeToImguiVec("#000000", 0.0f));
 
     // draw "Maximus Overdrive" (game title)
-    ImVec2 trCorner = region.getCorner(Corner::TOP_RIGHT);
     ImGui::SetNextWindowSize(AUTO_RESIZE);
     ImGui::Begin("gametitle", false, logoWindowFlags);
 
-    // ImGui::PushFont(m_fonts["JockeyOneXL"]);
-    // ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Maximus");
-    // for (int i =0; i < 10; i++)
-    // {
-    //   ImGui::Spacing();
-    //   ImGui::SameLine();
-    // }
-    // ImGui::SameLine();
-    // ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Overdrive");
-    // ImGui::PopFont();
-
-    float size = 245;
-    ImVec2 imageSize{ size * 2.71f, size }; // enforce aspect ratio
+    size = 245;
+    imageSize = { size * 2.71f, size }; // enforce aspect ratio
 
     m_texts["logo"].Render(imageSize);
-
 
     v = ImGui::GetWindowSize();
     textOffset = { 0.f, 50.f };
@@ -411,10 +420,9 @@ void LondonFog::drawMenu(BoundingBox region, std::function<void(void)> resetCall
 
     ImGui::End();
 
-
     ImGui::PushStyleColor(ImGuiCol_WindowBg, colorCodeToImguiVec("#bf0d0d", 0.65f));
 
-    ImVec2 brCorner = region.getCorner(Corner::BOTTOM_RIGHT);
+    
     ImGui::SetNextWindowSize(AUTO_RESIZE);
     ImGui::Begin("main_menu_buttons", false, lfWindowFlags);
 
@@ -900,6 +908,12 @@ void LondonFog::loadTextures()
 
   UITexture finished{ "textures/finished.png" };
   m_texts["finished"] = finished;
+
+  UITexture PhysXLogo{ "textures/PhysXLogoWhite.png" };
+  m_texts["PhysXLogo"] = PhysXLogo;
+
+  UITexture FModLogo{ "textures/FModLogo.png" };
+  m_texts["FModLogo"] = FModLogo;
   // UITexture black{"textures/black.png"};
   // m_texts["black"] = black;
 

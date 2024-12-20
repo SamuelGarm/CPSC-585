@@ -1,17 +1,35 @@
-# cpsc585
+# Circus Maximus
 
 ## Downloading a playable build
 1. Go to the Releases on the Github page to download the .zip
 1. Unzip and launch 'libengine.exe'
 
 ## Controls
-AD : steer
-W : Forward
-S : Backwards/brake
-Space : Jump
-R: Reset race
-F1 : Pause
-P : Toggle debug panel (useful if you need to see framerate)
+- AD : steer
+- W : Forward
+- S : Backwards/brake
+- Space : Jump
+- R: Reset race
+- F1 : Pause
+- P : Toggle debug panel (useful if you need to see framerate)
+
+## Credits
+- Developers: Sam, Elise, Dylan, Beau 
+  - AI & ECS: Dylan
+  - Driving Model and game design: Elise
+  - Sound system integration: Beau
+  - Graphics: Sam
+  - Game Logic: Elise, Beau, Dylan, Sam
+  - Level Design: Dylan, Elise
+  - Build system: Beau, Dylan, Sam
+- Music: [Ierusalim By Roman on Free Music Archive CC BY 4.0](https://freemusicarchive.org/music/roman/single/ierusalimmp3/)
+
+## Licensing
+- PhysX Copyright (c) 2023 NVIDIA Corporation. All rights reserved
+- FMOD Studio by Firelight Technologies Pty Ltd.
+- ImGUI The MIT License (MIT) Copyright (c) 2014-2024 Omar Cornut
+- SDL2 zlib license 
+
 
 ## Setting up the coding enviroment (windows)
 ---
