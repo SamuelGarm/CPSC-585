@@ -210,10 +210,10 @@ void Camera::update(TransformComponent& _carTransform, bool isReversing, glm::ve
 	//glm::vec3 carPos2D = projectOntoPlane(carPos3D, downVector);
 	glm::vec3 camPos2D = carPos3D + projectOntoPlane(cameraTargetLocation - carPos3D, downVector);
 	glm::vec3 carFront2D;
-	{
-		glm::vec3 temp = glm::toMat4(_carTransform.getRotation()) * glm::vec4(0, 0, 1, 1);
-		carFront2D = glm::normalize(projectOntoPlane(temp, downVector)); //temp will never be 0 length since it is just being rotated
-	}
+	
+	glm::vec3 temp = glm::toMat4(_carTransform.getRotation()) * glm::vec4(0, 0, 1, 1);
+	carFront2D = glm::normalize(projectOntoPlane(temp, downVector)); //temp will never be 0 length since it is just being rotated
+	
 
 	/*
 	* determine the location of the camera target by performing operations in the xz plane
@@ -281,5 +281,16 @@ void Camera::update(TransformComponent& _carTransform, bool isReversing, glm::ve
 		finalPos += e / (float)cameraRollingAverageAmount;
 	}
 	setPos(finalPos);
+
+	//if the final camera position is in front of the vehicle decrease the timer, otherwise reset it
+	if (glm::dot(carFront2D, finalPos - carPos3D) > 0)
+		cameraResetTimer -= dt;
+	else
+		cameraResetTimer = 5.f;
+
+	if (cameraResetTimer <= 0) {
+		fixCamera = true;
+		cameraResetTimer = 5.f;
+	}
 
 }

@@ -30,7 +30,7 @@ private:
 	bool leftMouseButtonPressed = false, firstMouse = true;
 	const float cameraSpeed = 0.1;
 	bool initalized = false;
-	bool fixCamera = false;
+	bool fixCamera = true;
 	glm::vec3 cameraTargetLocation = glm::vec3(0);
 	const int rollingAverageAmount = 60;
 	int rollingIndex = 0;
@@ -38,8 +38,11 @@ private:
 
 	const int cameraRollingAverageAmount = 15;
 	int cameraRollingIndex = 0;
+	//averages the target camera position over a series of frames to smooth out movement and allow for the vehicle to spin out without the camera swinging
 	std::vector<glm::vec3> rollingAverageCamera = std::vector<glm::vec3>(cameraRollingAverageAmount, glm::vec3(0, 0, 0));
 
 	float FOV = 30;
 	glm::vec3 cameraVelocity = { 0,0,0 };
+
+	float cameraResetTimer = 5.f;
 };
